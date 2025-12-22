@@ -1,0 +1,414 @@
+{
+    "version": "2.0.0",
+    "lastUpdated": "2024-12-22",
+    "description": "Legend of Darkness 에셋 매니페스트 - 스프라이트시트 기반",
+    "style": {
+        "era": "90s RPG",
+        "genre": "Dark Fantasy",
+        "perspective": "Isometric 2.5D",
+        "rendering": "Spritesheet-based"
+    },
+    "rules": {
+        "oneTileRule": "모든 엔티티는 시각적 크기와 관계없이 논리적으로 1타일만 차지",
+        "spritesheetLayout": "Row 0: Idle, Row 1: Move, Row 2: Attack, Row 3: Death"
+    },
+    "characters": {
+        "warrior": {
+            "male": "/assets/characters/warrior/male_spritesheet.png",
+            "female": "/assets/characters/warrior/female_spritesheet.png",
+            "frameSize": {
+                "width": 64,
+                "height": 64
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            }
+        },
+        "mage": {
+            "male": "/assets/characters/mage/male_spritesheet.png",
+            "female": "/assets/characters/mage/female_spritesheet.png",
+            "frameSize": {
+                "width": 64,
+                "height": 64
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            }
+        },
+        "rogue": {
+            "male": "/assets/characters/rogue/male_spritesheet.png",
+            "female": "/assets/characters/rogue/female_spritesheet.png",
+            "frameSize": {
+                "width": 64,
+                "height": 64
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            }
+        },
+        "cleric": {
+            "male": "/assets/characters/cleric/male_spritesheet.png",
+            "female": "/assets/characters/cleric/female_spritesheet.png",
+            "frameSize": {
+                "width": 64,
+                "height": 64
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            }
+        },
+        "martial_artist": {
+            "male": "/assets/characters/martial_artist/male_spritesheet.png",
+            "female": "/assets/characters/martial_artist/female_spritesheet.png",
+            "frameSize": {
+                "width": 64,
+                "height": 64
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            }
+        }
+    },
+    "monsters": {
+        "slime": {
+            "path": "/assets/monsters/slime/spritesheet.png",
+            "level": {
+                "min": 1,
+                "max": 5
+            },
+            "frameSize": {
+                "width": 32,
+                "height": 32
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            },
+            "category": "small"
+        },
+        "rat": {
+            "path": "/assets/monsters/rat/spritesheet.png",
+            "level": {
+                "min": 1,
+                "max": 3
+            },
+            "frameSize": {
+                "width": 32,
+                "height": 32
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            },
+            "category": "small"
+        },
+        "bat": {
+            "path": "/assets/monsters/bat/spritesheet.png",
+            "level": {
+                "min": 3,
+                "max": 7
+            },
+            "frameSize": {
+                "width": 32,
+                "height": 32
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            },
+            "category": "small"
+        },
+        "wolf": {
+            "path": "/assets/monsters/wolf/spritesheet.png",
+            "level": {
+                "min": 5,
+                "max": 10
+            },
+            "frameSize": {
+                "width": 48,
+                "height": 48
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            },
+            "category": "medium"
+        },
+        "skeleton": {
+            "path": "/assets/monsters/skeleton/spritesheet.png",
+            "level": {
+                "min": 8,
+                "max": 15
+            },
+            "frameSize": {
+                "width": 48,
+                "height": 48
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            },
+            "category": "medium"
+        },
+        "goblin": {
+            "path": "/assets/monsters/goblin/spritesheet.png",
+            "level": {
+                "min": 10,
+                "max": 20
+            },
+            "frameSize": {
+                "width": 48,
+                "height": 48
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            },
+            "category": "medium"
+        },
+        "ghost": {
+            "path": "/assets/monsters/ghost/spritesheet.png",
+            "level": {
+                "min": 15,
+                "max": 25
+            },
+            "frameSize": {
+                "width": 48,
+                "height": 48
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 4
+            },
+            "category": "medium"
+        },
+        "dragon": {
+            "path": "/assets/monsters/dragon/spritesheet.png",
+            "level": {
+                "min": 50,
+                "max": 99
+            },
+            "frameSize": {
+                "width": 128,
+                "height": 128
+            },
+            "frames": {
+                "idle": 4,
+                "move": 4,
+                "attack": 6,
+                "death": 6
+            },
+            "category": "boss"
+        }
+    },
+    "skills": {
+        "warrior": {
+            "slash": {
+                "path": "/assets/skills/warrior/slash_fx.png",
+                "frames": 6,
+                "frameSize": {
+                    "width": 64,
+                    "height": 64
+                }
+            },
+            "power_strike": {
+                "path": "/assets/skills/warrior/power_strike_fx.png",
+                "frames": 6,
+                "frameSize": {
+                    "width": 64,
+                    "height": 64
+                }
+            }
+        },
+        "mage": {
+            "fireball": {
+                "path": "/assets/skills/mage/fireball_fx.png",
+                "frames": 6,
+                "frameSize": {
+                    "width": 64,
+                    "height": 64
+                }
+            },
+            "icebolt": {
+                "path": "/assets/skills/mage/icebolt_fx.png",
+                "frames": 6,
+                "frameSize": {
+                    "width": 64,
+                    "height": 64
+                }
+            },
+            "lightning": {
+                "path": "/assets/skills/mage/lightning_fx.png",
+                "frames": 6,
+                "frameSize": {
+                    "width": 64,
+                    "height": 64
+                }
+            }
+        },
+        "common": {
+            "hit_impact": {
+                "path": "/assets/skills/common/hit_impact.png",
+                "frames": 4,
+                "frameSize": {
+                    "width": 32,
+                    "height": 32
+                }
+            },
+            "critical_fx": {
+                "path": "/assets/skills/common/critical_fx.png",
+                "frames": 6,
+                "frameSize": {
+                    "width": 48,
+                    "height": 48
+                }
+            }
+        }
+    },
+    "tiles": {
+        "tileset": {
+            "path": "/assets/tiles/ground/tileset.png",
+            "tileSize": {
+                "width": 64,
+                "height": 48
+            },
+            "layout": [
+                "grass",
+                "stone",
+                "water",
+                "wall",
+                "portal"
+            ]
+        },
+        "buildings": {
+            "path": "/assets/tiles/buildings/buildings.png",
+            "layout": [
+                "house",
+                "blacksmith",
+                "tavern",
+                "guild_hall"
+            ],
+            "size": {
+                "width": 128,
+                "height": 128
+            }
+        },
+        "decorations": {
+            "torch": "/assets/tiles/decorations/torch.png",
+            "tree": "/assets/tiles/decorations/tree.png",
+            "gravestone": "/assets/tiles/decorations/gravestone.png"
+        }
+    },
+    "audio": {
+        "bgm": {
+            "main_theme": {
+                "path": "/assets/audio/bgm/main_theme.mp3",
+                "loop": true,
+                "volume": 0.5
+            },
+            "village": {
+                "path": "/assets/audio/bgm/village.mp3",
+                "loop": true,
+                "volume": 0.4
+            },
+            "dungeon": {
+                "path": "/assets/audio/bgm/dungeon.mp3",
+                "loop": true,
+                "volume": 0.5
+            },
+            "boss": {
+                "path": "/assets/audio/bgm/boss.mp3",
+                "loop": true,
+                "volume": 0.6
+            }
+        },
+        "sfx": {
+            "attack": {
+                "sword_swing": {
+                    "path": "/assets/audio/sfx/attack/sword_swing.mp3",
+                    "volume": 0.7
+                },
+                "hit_flesh": {
+                    "path": "/assets/audio/sfx/attack/hit_flesh.mp3",
+                    "volume": 0.6
+                },
+                "hit_metal": {
+                    "path": "/assets/audio/sfx/attack/hit_metal.mp3",
+                    "volume": 0.6
+                }
+            },
+            "skill": {
+                "fire_cast": {
+                    "path": "/assets/audio/sfx/skill/fire_cast.mp3",
+                    "volume": 0.7
+                },
+                "ice_cast": {
+                    "path": "/assets/audio/sfx/skill/ice_cast.mp3",
+                    "volume": 0.7
+                },
+                "heal_cast": {
+                    "path": "/assets/audio/sfx/skill/heal_cast.mp3",
+                    "volume": 0.6
+                }
+            },
+            "ui": {
+                "click": {
+                    "path": "/assets/audio/sfx/ui/click.mp3",
+                    "volume": 0.5
+                },
+                "open_menu": {
+                    "path": "/assets/audio/sfx/ui/open_menu.mp3",
+                    "volume": 0.5
+                },
+                "level_up": {
+                    "path": "/assets/audio/sfx/ui/level_up.mp3",
+                    "volume": 0.8
+                }
+            },
+            "ambient": {
+                "wind": {
+                    "path": "/assets/audio/sfx/ambient/wind.mp3",
+                    "volume": 0.3
+                },
+                "dungeon_echo": {
+                    "path": "/assets/audio/sfx/ambient/dungeon_echo.mp3",
+                    "volume": 0.4
+                }
+            }
+        }
+    },
+    "ui": {
+        "inventory_bg": "/assets/ui/inventory_bg.png",
+        "buttons": "/assets/ui/buttons.png",
+        "icons": "/assets/ui/icons/"
+    }
+}

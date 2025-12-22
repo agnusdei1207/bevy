@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+pub mod character;
 pub mod player;
 pub mod monster;
 pub mod item;

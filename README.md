@@ -4,6 +4,31 @@
 
 **Rust + Leptos 0.8 + Axum 0.8 + SQLx + PostgreSQL**
 
+에셋 가이드라인 디자인 가이드 리드미등 싱크 맞추고 서로 중복 내용 없애고 참조할 수 있게 수정하세요. 리펙토링 문서 진행.
+
+axum = { version = "0.7", optional = true }
+이거 안 쓰면 지워주세요 보니까 렙토스 axum 은 쓰는데 그냥 axum 은 쓰는지 모르겠네 버전이 안 맞는 것 같아.
+
+axum = { version = "0.7", optional = true }
+console_error_panic_hook = "0.1"
+console_log = "1"
+leptos = { version = "0.8", features = ["nightly"] }
+rand = { version = "0.8", features = ["small_rng"] }
+getrandom = { version = "0.2", features = ["js"] }
+bcrypt = "0.15"
+jsonwebtoken = "9"
+
+버전 코드들 빨간줄 뜨는데, 몇몇것들 확인해주세요.
+
+항상 0.8 이상이 최신이므로 반드시 최신을 따라주세요. 항상 안전한 최신버전을 검색하고 그것을 따라주세요.
+
+빌드 테스트 웹 테스트도 시행하세요.게임 실행까지 다 테스트하세요. 감사합니다. 당신은 최고의 해결사 개발자입니다.
+
+
+완벽하게 빌드 실행 게임 웹 테스트까지 다 실행하세요. 에셋이 게임처럼 잘보이는지 UI가 노출되는지 등등 웹이나앱처럼 동작할 수 있는지 테스트도 다 거쳐서 디버깅을 실시해주세요.
+
+전체적으로 파일이나 폴더 등 싱크가 맞는지 구조가 맞는지도 확인해주세요.
+
 ## 🎮 게임 특징
 
 ### 핵심 시스템

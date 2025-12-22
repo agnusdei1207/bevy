@@ -152,10 +152,10 @@ INSERT INTO item_definitions (name, item_type, sub_type, grade, req_class, stats
 
 -- Monsters (1-99)
 INSERT INTO monster_definitions (name, level, hp_max, mp_max, attack_min, attack_max, defense, exp_reward, gold_min, gold_max, sprite_path, ai_type) VALUES
-('Rabbit', 1, 20, 0, 2, 4, 0, 5, 1, 3, 'assets/monsters/rabbit.png', 'passive'),
-('Squirrel', 3, 35, 0, 4, 6, 1, 10, 2, 5, 'assets/monsters/squirrel.png', 'passive'),
+('Giant Rat', 1, 20, 0, 2, 4, 0, 5, 1, 3, 'assets/monsters/rat.png', 'aggressive'),
+('Vampire Bat', 3, 35, 0, 4, 6, 1, 10, 2, 5, 'assets/monsters/bat.png', 'aggressive'),
 ('Slime', 5, 50, 0, 6, 9, 2, 18, 5, 10, 'assets/monsters/slime.png', 'aggressive'),
-('Fox', 10, 120, 20, 15, 20, 5, 45, 15, 30, 'assets/monsters/fox.png', 'aggressive'),
+('Corrupted Fox', 10, 120, 20, 15, 20, 5, 45, 15, 30, 'assets/monsters/fox.png', 'aggressive'),
 ('Wolf', 15, 200, 30, 25, 35, 10, 80, 25, 50, 'assets/monsters/wolf.png', 'aggressive'),
 ('Skeleton', 20, 350, 0, 40, 55, 15, 150, 40, 80, 'assets/monsters/skeleton.png', 'aggressive'),
 ('Goblin', 30, 600, 50, 60, 80, 25, 300, 80, 150, 'assets/monsters/goblin.png', 'aggressive'),

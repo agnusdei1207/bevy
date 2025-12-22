@@ -1,6 +1,13 @@
+//! 게임 모듈
+//!
+//! hydrate feature가 활성화된 경우에만 컴파일
+
+#![cfg(feature = "hydrate")]
+
 use leptos::prelude::*;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 use crate::shared::domain::*;
-use crate::client::components::*;
 
 mod canvas;
 mod systems;
@@ -42,7 +49,7 @@ pub fn GameView() -> impl IntoView {
                     detection_range: 150.0,
                     attack_range: 40.0,
                     move_speed: 80.0,
-                    sprite_path: "/assets/monsters/slime.png".to_string(),
+                    sprite_path: "/assets/monsters/slime/spritesheet.png".to_string(),
                 },
                 Position::new(300.0, 200.0),
             ),
@@ -62,7 +69,7 @@ pub fn GameView() -> impl IntoView {
                     detection_range: 180.0,
                     attack_range: 45.0,
                     move_speed: 90.0,
-                    sprite_path: "/assets/monsters/blue_slime.png".to_string(),
+                    sprite_path: "/assets/monsters/slime/spritesheet.png".to_string(),
                 },
                 Position::new(500.0, 350.0),
             ),
@@ -82,7 +89,7 @@ pub fn GameView() -> impl IntoView {
                     detection_range: 250.0,
                     attack_range: 55.0,
                     move_speed: 110.0,
-                    sprite_path: "/assets/monsters/goblin.png".to_string(),
+                    sprite_path: "/assets/monsters/goblin/spritesheet.png".to_string(),
                 },
                 Position::new(600.0, 250.0),
             ),
@@ -90,9 +97,6 @@ pub fn GameView() -> impl IntoView {
         set_monsters.set(initial_monsters);
         
         // 전역 키보드 이벤트 설정
-        use wasm_bindgen::prelude::*;
-        use wasm_bindgen::JsCast;
-        
         if let Some(window) = web_sys::window() {
             if let Some(document) = window.document() {
                 let set_keys_down = set_keys_pressed;
@@ -128,7 +132,7 @@ pub fn GameView() -> impl IntoView {
 
     view! {
         <div class="game-container">
-            <HUD
+            <crate::client::components::HUD
                 player=player
                 on_character_click=move |_| set_show_character.set(!show_character.get())
                 on_inventory_click=move |_| set_show_inventory.set(!show_inventory.get())
@@ -145,7 +149,7 @@ pub fn GameView() -> impl IntoView {
             {move || {
                 if show_character.get() {
                     Some(view! {
-                        <CharacterWindow
+                        <crate::client::components::CharacterWindow
                             player=player
                             set_player=set_player
                             on_close=move |_| set_show_character.set(false)
@@ -159,7 +163,7 @@ pub fn GameView() -> impl IntoView {
             {move || {
                 if show_inventory.get() {
                     Some(view! {
-                        <InventoryWindow on_close=move |_| set_show_inventory.set(false) />
+                        <crate::client::components::InventoryWindow on_close=move |_| set_show_inventory.set(false) />
                     })
                 } else {
                     None
@@ -169,7 +173,7 @@ pub fn GameView() -> impl IntoView {
             {move || {
                 if show_skills.get() {
                     Some(view! {
-                        <SkillWindow player=player on_close=move |_| set_show_skills.set(false) />
+                        <crate::client::components::SkillWindow player=player on_close=move |_| set_show_skills.set(false) />
                     })
                 } else {
                     None
