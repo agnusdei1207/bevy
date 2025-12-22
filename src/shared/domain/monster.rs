@@ -59,7 +59,7 @@ impl Monster {
             target_player_id: None,
             is_attacking: false,
             last_attack_time: 0.0,
-            attack_cooldown: 1500.0,
+            attack_cooldown: 1000.0,
         }
     }
     

@@ -30,7 +30,7 @@
 |------|------|------|
 | **프론트엔드** | Leptos | 0.8 |
 | **백엔드** | Axum | 0.8 |
-| **데이터베이스** | PostgreSQL | 16 (Alpine) |
+| **데이터베이스** | PostgreSQL | 18 (Alpine) |
 | **ORM** | SQLx | 0.8 |
 | **언어** | Rust | 1.85+ (nightly) |
 | **개발 환경** | Docker Compose | - |

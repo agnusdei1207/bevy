@@ -1,1 +1,0 @@
-ALTER TABLE characters ADD COLUMN gender VARCHAR(10) DEFAULT 'male';

@@ -33,6 +33,8 @@ pub struct Player {
     pub is_moving: bool,
     pub is_attacking: bool,
     pub target_monster_id: Option<String>,
+    pub last_attack_time: f64,
+    pub attack_cooldown: f64,
 }
 
 impl Player {
@@ -61,7 +63,18 @@ impl Player {
             is_moving: false,
             is_attacking: false,
             target_monster_id: None,
+            last_attack_time: 0.0,
+            attack_cooldown: 1000.0,
         }
+    }
+
+    pub fn can_attack(&self, current_time: f64) -> bool {
+        current_time - self.last_attack_time >= self.attack_cooldown
+    }
+
+    pub fn register_attack(&mut self, current_time: f64) {
+        self.last_attack_time = current_time;
+        self.is_attacking = true;
     }
     
     pub fn add_exp(&mut self, amount: i64) {

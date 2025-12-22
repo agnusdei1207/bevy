@@ -47,6 +47,19 @@ pub fn GameCanvas(
         onload.forget();
     });
 
+    // Load Lamp Sheet (Yellow Torch)
+    let (lamp_sheet, set_lamp_sheet) = signal(None::<web_sys::HtmlImageElement>);
+    Effect::new(move |_| {
+        let img = web_sys::HtmlImageElement::new().unwrap();
+        img.set_src("/assets/tiles/lamp_yellow.png");
+        let set_img = set_lamp_sheet;
+        let onload = Closure::wrap(Box::new(move || {
+            set_img.set(Some(img.clone()));
+        }) as Box<dyn FnMut()>);
+        img.set_onload(Some(onload.as_ref().unchecked_ref()));
+        onload.forget();
+    });
+
     // ... (existing effects) ...
     // Update render loop
     Effect::new(move |_| {
@@ -59,6 +72,7 @@ pub fn GameCanvas(
                         &monster_sheet.get(), 
                         &tile_sheet.get(),
                         &building_sheet.get(),
+                        &lamp_sheet.get(),
                         &map_renderer,
                         &map_data
                     );
@@ -69,6 +83,34 @@ pub fn GameCanvas(
     // Note: I will need to replace the render_game signature and implementation in one go properly.
     // I am replacing the TOP part of the component logic here.
     
+    let (player_sprite, set_player_sprite) = signal(None::<web_sys::HtmlImageElement>);
+    let (monster_sheet, set_monster_sheet) = signal(None::<web_sys::HtmlImageElement>); // Ensuring this exists too
+
+    // Load Player Sprite Dynamically
+    Effect::new(move |_| {
+        let p = player.get();
+        let class_name = match p.class {
+            PlayerClass::Warrior => "warrior",
+            PlayerClass::Rogue => "rogue",
+            PlayerClass::Mage => "mage",
+            PlayerClass::Cleric => "cleric",
+            PlayerClass::MartialArtist => "martial_artist",
+        };
+        let suffix = if p.gender == "female" { "_female" } else { "" };
+        let path = format!("/assets/characters/{}{}.png", class_name, suffix);
+        
+        let img = web_sys::HtmlImageElement::new().unwrap();
+        img.set_src(&path);
+        let set_img = set_player_sprite;
+        let onload = Closure::wrap(Box::new(move || {
+            set_img.set(Some(img.clone()));
+        }) as Box<dyn FnMut()>);
+        img.set_onload(Some(onload.as_ref().unchecked_ref()));
+        onload.forget();
+    });
+
+    // ... (existing effects) ...
+
     // 게임 루프
     Effect::new(move |_| {
         if let Some(canvas) = canvas_ref.get() {
@@ -91,7 +133,7 @@ pub fn GameCanvas(
                 last_time = current_time;
                 
                 if delta_time > 0.0 && delta_time < 0.1 {
-                    // Update logic (movement etc)
+                    // Update logic
                     let keys = keys_pressed.get();
                     let mut p = player.get();
                     let speed = 200.0 * delta_time;
@@ -104,6 +146,18 @@ pub fn GameCanvas(
                     if keys.contains("ArrowLeft") || keys.contains("a") || keys.contains("A") { new_x -= speed; p.direction = Direction::Left; moved = true; }
                     if keys.contains("ArrowRight") || keys.contains("d") || keys.contains("D") { new_x += speed; p.direction = Direction::Right; moved = true; }
                     
+                    // Attack (Spacebar)
+                    if keys.contains(" ") {
+                        if p.can_attack(current_time) {
+                            p.register_attack(current_time);
+                        }
+                    }
+
+                    // Reset attacking state after a short animation window (e.g. 500ms)
+                    if p.is_attacking && (current_time - p.last_attack_time > 500.0) {
+                        p.is_attacking = false;
+                    }
+                    
                     new_x = new_x.max(16.0).min(CANVAS_WIDTH - 16.0);
                     new_y = new_y.max(16.0).min(CANVAS_HEIGHT - 16.0);
                     
@@ -112,7 +166,18 @@ pub fn GameCanvas(
                     p.is_moving = moved;
                     set_player.set(p);
                     
-                    render_game(&ctx, player.get(), monsters.get(), &char_sheet.get(), &monster_sheet.get());
+                    render_game(
+                        &ctx, 
+                        player.get(), 
+                        monsters.get(), 
+                        &player_sprite.get(), 
+                        &monster_sheet.get(), 
+                        &tile_sheet.get(),
+                        &building_sheet.get(),
+                        &lamp_sheet.get(),
+                        &map_renderer,
+                        &map_data
+                    );
                 }
                 request_animation_frame(f.borrow().as_ref().unwrap());
             }) as Box<dyn FnMut()>));
@@ -134,10 +199,11 @@ fn render_game(
     ctx: &CanvasRenderingContext2d, 
     player: Player, 
     monsters: Vec<Monster>, 
-    char_sheet: &Option<web_sys::HtmlImageElement>,
+    player_sprite: &Option<web_sys::HtmlImageElement>,
     monster_sheet: &Option<web_sys::HtmlImageElement>,
     tile_sheet: &Option<web_sys::HtmlImageElement>,
     building_sheet: &Option<web_sys::HtmlImageElement>,
+    lamp_sheet: &Option<web_sys::HtmlImageElement>,
     map_renderer: &crate::client::game::systems::MapRenderer,
     map_data: &crate::shared::domain::map::MapData
 ) {
@@ -145,17 +211,8 @@ fn render_game(
     ctx.set_fill_style(&JsValue::from_str("#0f0c29"));
     ctx.fill_rect(0.0, 0.0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // 맵 렌더링 (Tiles & Buildings)
-    // Note: Buildings currently drawn on top of tiles but under entities? 
-    // In deep isometric, objects need to be sorted with entities.
-    // map_renderer.render handles tiles + objects. 
-    // Ideally we split it: Render Floor -> Render Entities+Objects sorted by Y.
-    // For now, let's let map_renderer draw floor AND buildings, and draw entities on top.
-    // This defines "Background buildings".
-    
-    map_renderer.render(ctx, map_data, tile_sheet, building_sheet);
-    
-    // ... Entities rendering ...
+    // 맵 렌더링
+    map_renderer.render(ctx, map_data, tile_sheet, building_sheet, lamp_sheet);
     
     // Sort entities
     enum Entity<'a> {
@@ -185,7 +242,7 @@ fn render_game(
         match entity {
             Entity::Player(p) => {
                 let (sx, sy) = to_screen_coord(p.position.x, p.position.y);
-                if let Some(img) = char_sheet {
+                if let Some(img) = player_sprite {
                     draw_player_sprite(ctx, p, img, sx, sy);
                 } else {
                     draw_player(ctx, p, sx, sy);
@@ -203,199 +260,50 @@ fn render_game(
     }
 }
 
-// 아이소메트릭 변환 함수 (Isometric Projection)
-// 2D 그리드 좌표를 2.5D 아이소메트릭 화면 좌표로 변환합니다.
-fn to_screen_coord(world_x: f64, world_y: f64) -> (f64, f64) {
-    let tile_width = 64.0; // 타일의 시각적 너비 (가로 64픽셀)
-    let tile_height = 32.0; // 타일의 시각적 높이 (세로 32픽셀)
-    
-    // 월드 좌표(픽셀)를 그리드 좌표(격자 인덱스)로 변환
-    // 게임 로직상 32픽셀을 1칸으로 취급한다고 가정
-    let grid_x = world_x / 32.0;
-    let grid_y = world_y / 32.0;
-    
-    // 화면 중앙을 기준으로 렌더링 시작점 설정
-    let origin_x = CANVAS_WIDTH / 2.0;
-    let origin_y = 100.0;
-    
-    // 아이소메트릭 투영 공식
-    // 화면 X = (그리드X - 그리드Y) * (타일너비 / 2)
-    // 화면 Y = (그리드X + 그리드Y) * (타일높이 / 2)
-    // 이 공식이 캐릭터와 타일을 사선(다이아몬드 형태)으로 배치하게 만듭니다.
-    let screen_x = origin_x + (grid_x - grid_y) * (tile_width / 2.0);
-    let screen_y = origin_y + (grid_x + grid_y) * (tile_height / 2.0);
-    
-    (screen_x, screen_y)
-}
-    // Load Tile Sheet
-    let (tile_sheet, set_tile_sheet) = signal(None::<web_sys::HtmlImageElement>);
-    Effect::new(move |_| {
-        let img = web_sys::HtmlImageElement::new().unwrap();
-        img.set_src("/assets/tiles/iso_tiles.png");
-        let set_img = set_tile_sheet;
-        let onload = Closure::wrap(Box::new(move || {
-            set_img.set(Some(img.clone()));
-        }) as Box<dyn FnMut()>);
-        img.set_onload(Some(onload.as_ref().unchecked_ref()));
-        onload.forget();
-    });
-
-    // ... (Inside render_game, update signature to accept tile_sheet) ...
-    // render_game(&ctx, ..., &tile_sheet.get());
-    
-// Helper to draw the map
-fn draw_map_tiles(ctx: &CanvasRenderingContext2d, tile_sheet: &Option<web_sys::HtmlImageElement>) {
-    if let Some(sheet) = tile_sheet {
-        // Assume a fixed map size for now (e.g., 20x20)
-        // In a real scenario, this comes from Map Data
-        let map_width = 25;
-        let map_height = 25;
-        
-        // Tile dimensions in the sheet
-        // Prompt generated: Grass, Stone, Water, Wall, Portal
-        // Assuming they are in a row or grid.
-        // Let's assume standard 64x32 logic (or 64x64 if they are tall blocks).
-        // Let's assume the generated image has them in a row: 0: Grass, 1: Stone, 2: Water
-        
-        let tile_w = 64.0;
-        let tile_h = 48.0; // Bit taller for the blockiness
-        
-        for gy in 0..map_height {
-            for gx in 0..map_width {
-                // Determine tile type based on coordinates (Mock Logic)
-                let tile_idx = if gx == 0 || gx == map_width - 1 || gy == 0 || gy == map_height - 1 {
-                    3.0 // Wall
-                } else if (gx + gy) % 10 == 0 {
-                    2.0 // Water
-                } else if (gx * gy) % 7 == 0 {
-                   1.0 // Stone
-                } else {
-                    0.0 // Grass
-                };
-
-                let grid_x = gx as f64;
-                let grid_y = gy as f64;
-                
-                // Convert Grid -> Screen
-                // Reuse to_screen_coord logic but optimized for loop
-                 // 화면 X = (그리드X - 그리드Y) * (타일너비 / 2)
-                 // 화면 Y = (그리드X + 그리드Y) * (타일높이 / 2)
-                 // Tiles usually need to be drawn from top-back to bottom-front (Painter's algo).
-                 // Simple loop Y then X matches isometric standard typically (or X+Y sorting).
-                 
-                 let origin_x = CANVAS_WIDTH / 2.0;
-                 let origin_y = 100.0;
-                 let tile_iso_width = 64.0;
-                 let tile_iso_height = 32.0;
-                 
-                 let sx = origin_x + (grid_x - grid_y) * (tile_iso_width / 2.0);
-                 let sy = origin_y + (grid_x + grid_y) * (tile_iso_height / 2.0);
-                 
-                 // Draw Tile
-                 // Adjust draw position because the "origin" of the tile image is usually bottom-center or top-left.
-                 // For a 64x48 block where the top diamond is the floor surface:
-                 // We draw so the center of the diamond aligns with sx, sy.
-                 
-                 let draw_x = sx - tile_w / 2.0;
-                 let draw_y = sy - (tile_h - tile_iso_height / 2.0); // Adjust for height
-                 
-                 // Source coordinates
-                 let src_x = tile_idx * 64.0;
-                 let src_y = 0.0;
-                 
-                 ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-                     sheet, src_x, src_y, tile_w, tile_h, draw_x, draw_y, tile_w, tile_h
-                 ).unwrap_or_else(|_| ());
-            }
-        }
-    } else {
-        // Fallback to lines
-        draw_isometric_grid(ctx);
-    }
-}
+// ... helper functions ...
 
 fn draw_player_sprite(ctx: &CanvasRenderingContext2d, player: &Player, img: &web_sys::HtmlImageElement, sx: f64, sy: f64) {
-    let draw_x = sx - 16.0;
-    let draw_y = sy - 24.0;
+    let draw_x = sx - 32.0; // Centered 64 width
+    let draw_y = sy - 48.0; // 64 height
     
-    // Tiered Spritesheet Layout:
-    // Rows (0-9):
-    // 0: Warrior Male, 1: Warrior Female
-    // 2: Rogue Male, 3: Rogue Female
-    // 4: Mage Male, 5: Mage Female
-    // 6: Cleric Male, 7: Cleric Female
-    // 8: Martial Artist Male, 9: Martial Artist Female
+    // Sprite Layout Assumption for "Class Specific Sheet":
+    // Row 0: Idle
+    // Row 1: Move
+    // Row 2: Attack
     
-    // Columns (0-4):
-    // 0: Tier 1 (Circle 1 - Rags)
-    // 1: Tier 2 (Circle 2 - Novice)
-    // 2: Tier 3 (Circle 3 - Skilled)
-    // 3: Tier 4 (Circle 4 - Expert)
-    // 4: Tier 5 (Circle 5 - Master)
-
-    // Calculate Row
-    let base_row = match player.class {
-        PlayerClass::Warrior => 0.0,
-        PlayerClass::Rogue => 2.0,
-        PlayerClass::Mage => 4.0,
-        PlayerClass::Cleric => 6.0,
-        PlayerClass::MartialArtist => 8.0,
-    };
-    
-    let gender_offset = if player.gender == "female" { 1.0 } else { 0.0 };
-    let row = base_row + gender_offset;
-    
-    // Calculate Visual Tier (Column)
-    // Based on equipped Armor Grade primarily, or Level (Circle).
-    // User said: "depending on what item they wear, different appearance".
-    // Let's use the Armor slot item grade.
-    // If no armor, Tier 1.
-    // Grade 1-2: Tier 1
-    // Grade 3-4: Tier 2
-    // Grade 5-6: Tier 3
-    // Grade 7-9: Tier 4
-    // Grade 10-12: Tier 5
-    
-    let tier_col = if let Some(armor) = player.equipment.get(&crate::shared::domain::item::models::EquipmentSlot::Armor) {
-        match armor.grade {
-            1..=2 => 0.0,
-            3..=4 => 1.0,
-            5..=6 => 2.0,
-            7..=9 => 3.0,
-            10..=12 => 4.0,
-            _ => 0.0,
-        }
+    let mut row = 0.0;
+    if player.is_attacking {
+        row = 2.0;
+    } else if player.is_moving {
+        row = 1.0;
     } else {
-        // Fallback to level-based circle if no armor? Or just naked/rags (Tier 1).
-        // Let's use Level/11 roughly if no armor, or just 0.
-        // User implied circles. Let's stick to Armor Grade driving looks.
-        // If naked, Tier 1 (Rags).
-        0.0
+        row = 0.0;
+    }
+    
+    // Animation Frame Logic
+    let now = js_sys::Date::now() as f64;
+    let frame_count = 4; // Assumption
+    let frame_duration = 150.0; // ms
+    
+    let frame = if player.is_attacking {
+        let attack_elapsed = now - player.last_attack_time;
+        // Attack animation over 500ms approx
+        let total_frames = 6; // User requested 6 frames for skills/attack if possible
+        // Map 0-500ms to 0-5
+        let idx = (attack_elapsed / (500.0 / total_frames as f64)).floor();
+        idx.min((total_frames - 1) as f64)
+    } else {
+        ((now / frame_duration) as i32 % frame_count) as f64
     };
 
-    // Sprite dimensions in the generated sheet might be different. 
-    // Usually AI generates a grid.
-    // Let's assume standard cell size logic or adjust.
-    // The previous code used 32x48. Let's stick to that and assume the image scales.
-    // If the image is large, we might need to adjust `cell_width` / `cell_height`.
-    // Let's assume the generated image is a grid of 5 columns x 10 rows.
-    
-    // If movement animation is needed, we need "Frames" per Tier.
-    // But the prompt asked for "Tier 1 -> Tier 5" in rows.
-    // It didn't explicitly ask for animation frames for each tier.
-    // The previous code simulated walking by toggling frames.
-    // If the generated image DOES NOT have walk frames, we just show static.
-    // Let's toggle slightly or bob for now.
-    
-    let cell_width = 64.0; // Generated image likely has wider cells for detail
+    let cell_width = 64.0; 
     let cell_height = 64.0;
     
-    let src_x = tier_col * cell_width;
+    let src_x = frame * cell_width;
     let src_y = row * cell_height;
     
-    // Draw
     ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-        img, src_x, src_y, cell_width, cell_height, draw_x - 16.0, draw_y - 10.0, 64.0, 64.0
+        img, src_x, src_y, cell_width, cell_height, draw_x, draw_y, cell_width, cell_height
     ).unwrap_or_else(|_| ());
     
     // Name

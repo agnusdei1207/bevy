@@ -30,7 +30,8 @@ impl MapRenderer {
         ctx: &CanvasRenderingContext2d, 
         map_data: &MapData, 
         tile_sheet: &Option<HtmlImageElement>,
-        building_sheet: &Option<HtmlImageElement>
+        building_sheet: &Option<HtmlImageElement>,
+        lamp_sheet: &Option<HtmlImageElement>
     ) {
         // Render Tiles (Ground)
         if let Some(sheet) = tile_sheet {
@@ -73,27 +74,40 @@ impl MapRenderer {
             for obj in objects {
                 let (sx, sy) = self.to_screen(obj.x, obj.y);
                 
-                // Determine Source Rect based on type
-                // Generated image has: House, Smith, Tavern, Guild, Lamp
-                // Assuming roughly 128x128 or fits in grid.
-                // Let's assume generated image is a row of 128x128 regions? 
-                // Previous prompt said "Grid/Row".
-                // Let's assume 128px spacing.
-                
-                let (src_x, w, h, offset_y) = match obj.obj_type {
-                    ObjectType::House => (0.0, 128.0, 128.0, 96.0),
-                    ObjectType::Blacksmith => (128.0, 128.0, 128.0, 96.0),
-                    ObjectType::Tavern => (256.0, 128.0, 128.0, 96.0),
-                    ObjectType::GuildHall => (384.0, 128.0, 128.0, 96.0),
-                    ObjectType::Lamp => (512.0, 64.0, 128.0, 110.0), // Narrower
-                };
-                
-                let dx = sx - w / 2.0;
-                let dy = sy - offset_y; // Building sits on tile
-                
-                ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-                    sheet, src_x, 0.0, w, h, dx, dy, w, h
-                ).unwrap_or(());
+                match obj.obj_type {
+                    ObjectType::Lamp => {
+                        if let Some(l_sheet) = lamp_sheet {
+                             // Use separate lamp sheet
+                             // Single asset 32x64 or similar?
+                             // Generated asset is tall. Let's assume 32x64 fit.
+                             let w = 32.0;
+                             let h = 96.0; // Tall torch
+                             let dx = sx - w / 2.0;
+                             let dy = sy - 80.0; // Anchor bottom
+                             
+                             ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                                l_sheet, 0.0, 0.0, w, h, dx, dy, w, h
+                             ).unwrap_or(());
+                        }
+                    },
+                    _ => {
+                        // Use building sheet
+                        let (src_x, w, h, offset_y) = match obj.obj_type {
+                            ObjectType::House => (0.0, 128.0, 128.0, 96.0),
+                            ObjectType::Blacksmith => (128.0, 128.0, 128.0, 96.0),
+                            ObjectType::Tavern => (256.0, 128.0, 128.0, 96.0),
+                            ObjectType::GuildHall => (384.0, 128.0, 128.0, 96.0),
+                            ObjectType::Lamp => (0.0, 0.0, 0.0, 0.0), // Handled above
+                        };
+                        
+                        let dx = sx - w / 2.0;
+                        let dy = sy - offset_y; 
+                        
+                        ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                            sheet, src_x, 0.0, w, h, dx, dy, w, h
+                        ).unwrap_or(());
+                    }
+                }
             }
         }
     }

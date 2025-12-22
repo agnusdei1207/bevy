@@ -1,0 +1,32 @@
+{
+  "width": 20,
+  "height": 20,
+  "tiles": [
+    ["Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone"],
+    ["Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone", "Stone", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Grass", "Stone"],
+    ["Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone", "Stone"]
+  ],
+  "objects": [
+    {"id": "house_1", "obj_type": "House", "x": 5.0, "y": 5.0},
+    {"id": "blacksmith_1", "obj_type": "Blacksmith", "x": 15.0, "y": 5.0},
+    {"id": "taver_1", "obj_type": "Tavern", "x": 5.0, "y": 15.0},
+    {"id": "lamp_1", "obj_type": "Lamp", "x": 10.0, "y": 10.0}
+  ]
+}
