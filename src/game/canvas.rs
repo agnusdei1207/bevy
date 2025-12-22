@@ -231,45 +231,87 @@ fn draw_isometric_grid(ctx: &CanvasRenderingContext2d) {
 }
 
 fn draw_player_sprite(ctx: &CanvasRenderingContext2d, player: &Player, img: &web_sys::HtmlImageElement, sx: f64, sy: f64) {
-    // Sprite drawing centered on base
     let draw_x = sx - 16.0;
-    let draw_y = sy - 24.0; // Draw slightly up so feet are on tile center
+    let draw_y = sy - 24.0;
     
-    // Frame selection
-    let src_x = if player.is_moving { 32.0 } else { 0.0 };
-    let src_y = 0.0; // Warrior
+    // Rows in new spritesheet:
+    // 0: Male Warrior
+    // 1: Female Warrior (Example mapping)
+    // 2: Mage (Example)
+    // 3: Skeleton
+    // 4: Bat
+    // 5: Effects
     
+    let row = match (player.gender.as_str(), player.class) {
+        ("female", _) => 1.0,
+        (_, PlayerClass::Mage) => 2.0, // Prioritize class visuals for mage
+        _ => 0.0, // Default Male Warrior/Rogue etc
+    };
+    
+    let src_y = row * 48.0; // Assuming 48px height per character row in the generated sheet (often taller than 32)
+                            // or 32 if standard. Let's assume 32px based on previous code or prompt saying 32x48.
+                            // User prompt said "32x48 px characters". So height is 48.
+    
+    // Animation frame logic
+    let src_x = if player.is_moving {
+        let frame = (js_sys::Date::now() / 200.0) as i32 % 2; // Simple 2 frame walk
+        (frame as f64 + 1.0) * 32.0 
+    } else if player.is_attacking {
+        3.0 * 32.0 // Attack frame
+    } else {
+        0.0 // Idle
+    };
+        
+    // Draw 32x48 character
     ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-        img, src_x, src_y, 32.0, 32.0, draw_x, draw_y, 32.0, 32.0
+        img, src_x, src_y, 32.0, 48.0, draw_x, draw_y - 16.0, 32.0, 48.0
     ).unwrap_or_else(|_| ());
     
     // Name
-    ctx.set_fill_style(&JsValue::from_str("#ffffff"));
+    ctx.set_fill_style(&JsValue::from_str("#c5c6c7"));
     ctx.set_font("10px 'Press Start 2P', monospace");
     ctx.set_text_align("center");
     ctx.fill_text(&player.username, sx, draw_y - 5.0).unwrap();
 
     // HP bar
-    draw_hp_bar(ctx, sx, draw_y - 10.0, player.combat_stats.hp, player.combat_stats.max_hp);
+    draw_hp_bar(ctx, sx, draw_y - 8.0, player.combat_stats.hp, player.combat_stats.max_hp);
+    
+    // Effects overlay (Mockup)
+    if player.is_attacking {
+        // Draw slash effect from Row 5
+        let effect_row = 5.0;
+        ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+            img, 0.0, effect_row * 32.0, 32.0, 32.0, sx - 16.0, sy - 16.0, 32.0, 32.0
+        ).unwrap_or_else(|_| ());
+    }
 }
 
 fn draw_monster_sprite(ctx: &CanvasRenderingContext2d, monster: &Monster, img: &web_sys::HtmlImageElement, sx: f64, sy: f64) {
     let draw_x = sx - 16.0;
     let draw_y = sy - 24.0;
     
-    let src_x = 0.0; 
-    let src_y = 32.0; // Slime
+    // Map monster ID/Name to rows
+    let (row, height) = match monster.name.as_str() {
+        "박쥐" | "Dark Bat" => (4.0, 32.0),
+        _ => (3.0, 48.0), // Skeleton and others default to Row 3
+    };
+    
+    let src_y = row * 48.0; // Base offset. Note: standardizing rows to 48px strides for simplicity?
+                            // Or checking prompt. Prompt Row 3: Skeleton, Row 4: Bat.
+    
+    let src_x = (js_sys::Date::now() / 200.0) as i32 % 2; // Idle anim
+    let src_x = (src_x as f64) * 32.0;
     
     ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-        img, src_x, src_y, 32.0, 32.0, draw_x, draw_y, 32.0, 32.0
+        img, src_x, src_y, 32.0, height, draw_x, draw_y - (height - 32.0), 32.0, height
     ).unwrap_or_else(|_| ());
     
-    ctx.set_fill_style(&JsValue::from_str("#ffff00"));
+    ctx.set_fill_style(&JsValue::from_str("#ff4444")); // Red name for monsters
     ctx.set_font("8px 'Press Start 2P', monospace");
     ctx.set_text_align("center");
     ctx.fill_text(&monster.name, sx, draw_y - 5.0).unwrap();
     
-    draw_hp_bar(ctx, sx, draw_y - 10.0, monster.hp, monster.max_hp);
+    draw_hp_bar(ctx, sx, draw_y - 8.0, monster.hp, monster.max_hp);
 }
 
 

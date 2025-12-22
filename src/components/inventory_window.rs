@@ -14,7 +14,7 @@ pub fn InventoryWindow(
                 
                 <div class="window-content">
                     <div class="inventory-grid">
-                        {(0..24).map(|i| view! {
+                        {(0..16).map(|i| view! {
                             <div class="inventory-slot" data-slot=i>
                             </div>
                         }).collect::<Vec<_>>()}

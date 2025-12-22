@@ -109,60 +109,51 @@ impl Player {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum PlayerClass {
-    Warrior,   // 전사
-    Archer,    // 궁수
-    Mage,      // 마법사
-    Rogue,     // 도적
+    Warrior,
+    Rogue,
+    Mage,
+    Cleric,
+    MartialArtist,
 }
 
 impl PlayerClass {
     pub fn name(&self) -> &str {
         match self {
             PlayerClass::Warrior => "전사",
-            PlayerClass::Archer => "궁수",
-            PlayerClass::Mage => "마법사",
             PlayerClass::Rogue => "도적",
+            PlayerClass::Mage => "마법사",
+            PlayerClass::Cleric => "성직자",
+            PlayerClass::MartialArtist => "무도가",
         }
     }
     
     pub fn description(&self) -> &str {
         match self {
-            PlayerClass::Warrior => "강력한 물리 공격력과 높은 체력을 가진 근접 전투의 달인",
-            PlayerClass::Archer => "빠른 공격 속도와 원거리 공격이 특기인 민첩한 전사",
-            PlayerClass::Mage => "강력한 마법으로 적을 제압하는 지혜로운 전사",
-            PlayerClass::Rogue => "빠른 속도와 치명타로 적을 암살하는 그림자의 전사",
+            PlayerClass::Warrior => "강인한 체력과 파괴력을 지닌 전사",
+            PlayerClass::Rogue => "빠른 몸놀림과 기습에 능한 도적",
+            PlayerClass::Mage => "강력한 마법으로 적을 섬멸하는 마법사",
+            PlayerClass::Cleric => "신성한 힘으로 아군을 치유하는 성직자",
+            PlayerClass::MartialArtist => "극한의 신체 능력을 지닌 무도가",
         }
     }
     
     pub fn get_base_stats(&self) -> Stats {
+        // Legend of Darkness style roughly
         match self {
             PlayerClass::Warrior => Stats {
-                strength: 20,
-                dexterity: 10,
-                intelligence: 5,
-                vitality: 18,
-                luck: 7,
-            },
-            PlayerClass::Archer => Stats {
-                strength: 12,
-                dexterity: 20,
-                intelligence: 8,
-                vitality: 12,
-                luck: 15,
-            },
-            PlayerClass::Mage => Stats {
-                strength: 5,
-                dexterity: 8,
-                intelligence: 25,
-                vitality: 10,
-                luck: 12,
+                strength: 10, dexterity: 5, intelligence: 3, vitality: 10, luck: 3
             },
             PlayerClass::Rogue => Stats {
-                strength: 10,
-                dexterity: 18,
-                intelligence: 10,
-                vitality: 10,
-                luck: 20,
+                strength: 7, dexterity: 10, intelligence: 3, vitality: 5, luck: 5
+            },
+            PlayerClass::Mage => Stats {
+                strength: 3, dexterity: 4, intelligence: 10, vitality: 3, luck: 3
+            },
+            PlayerClass::Cleric => Stats {
+                strength: 4, dexterity: 4, intelligence: 7, vitality: 5, luck: 3 // Wis -> Int/Vit mix
+            },
+            PlayerClass::MartialArtist => Stats {
+                strength: 8, dexterity: 8, intelligence: 3, vitality: 8, luck: 3
             },
         }
     }
