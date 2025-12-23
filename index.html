@@ -4,10 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>어둠의전설 M - Legend of Darkness M</title>
-    <meta name="description" content="픽셀 RPG 온라인 게임" />
+    <link
+      data-trunk
+      rel="rust"
+      href="Cargo.toml"
+      data-wasm-opt="z"
+      data-lib="legend_client"
+    />
     <link data-trunk rel="css" href="style/main.css" />
     <link data-trunk rel="copy-dir" href="public/assets" />
-    <link data-trunk rel="rust" href="Cargo.toml" />
   </head>
   <body>
     <div id="app"></div>

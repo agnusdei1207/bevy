@@ -12,7 +12,6 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/legend.css"/>
         <Title text="어둠의전설 M - Legend of Darkness M"/>
         <Meta name="description" content="픽셀 RPG 온라인 게임"/>
         

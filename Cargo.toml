@@ -4,11 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [lib]
+name = "legend_client"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]
 name = "legend-api"
-path = "src/main.rs"
+path = "src/server_main.rs"
 
 [dependencies]
 # Core
