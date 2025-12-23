@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use super::Position;
+use crate::shared::domain::shared::models::{Position, Direction};
 
 /// Sprite size for monsters - determines frame dimensions
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -46,7 +46,7 @@ pub struct Monster {
     // 위치 및 상태
     pub position: Position,
     pub spawn_position: Position,
-    pub direction: super::Direction,
+    pub direction: Direction,
     
     // AI
     pub ai_type: MonsterAIType,
@@ -82,7 +82,7 @@ impl Monster {
             gold_max: monster_data.gold_max,
             position,
             spawn_position: position,
-            direction: super::Direction::Down,
+            direction: Direction::Down,
             ai_type: monster_data.ai_type,
             detection_range: monster_data.detection_range,
             attack_range: monster_data.attack_range,

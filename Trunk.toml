@@ -1,5 +1,5 @@
 [build]
-target = "index.html"
+target = "public/index.html"
 dist = "dist"
 
 [[features]]
