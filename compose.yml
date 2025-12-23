@@ -13,6 +13,8 @@ services:
     ports:
       - "8080:8080"
     working_dir: /workspace
+    environment:
+      - CARGO_TARGET_DIR=/workspace/target/web
     command: trunk serve --address 0.0.0.0
     depends_on:
       - api
@@ -29,6 +31,8 @@ services:
     working_dir: /workspace
     # Native desktop game (X11 forwarding required for display)
     # Use: docker compose run game cargo run --bin legend-game --features client
+    environment:
+      - CARGO_TARGET_DIR=/workspace/target/native
     command: cargo build --bin legend-game --features client
     profiles: [ "native" ]
     depends_on:
@@ -48,6 +52,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://legend:legend@db:5432/legend
       - RUST_LOG=info
+      - CARGO_TARGET_DIR=/workspace/target/api
     depends_on:
       db:
         condition: service_healthy
