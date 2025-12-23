@@ -9,8 +9,6 @@ async fn main() {
     use axum::{
         routing::{get, post},
         Router,
-        Json,
-        http::StatusCode,
     };
     use tower_http::cors::{CorsLayer, Any};
     use tower_http::services::ServeDir;
@@ -30,7 +28,7 @@ async fn main() {
         .expect("Failed to connect to database");
     
     // Initialize global DB pool
-    legend::server::db::init_db(pool.clone());
+    legend_client::server::db::init_db(pool.clone());
     
     // Run migrations
     sqlx::migrate!("./migrations")
@@ -49,8 +47,8 @@ async fn main() {
     // API Router
     let api_routes = Router::new()
         .route("/health", get(health_check))
-        .route("/login", post(legend::server::auth::login_handler))
-        .route("/register", post(legend::server::auth::register_handler));
+        .route("/login", post(legend_client::server::auth::login_handler))
+        .route("/register", post(legend_client::server::auth::register_handler));
     
     // Main Router
     let app = Router::new()

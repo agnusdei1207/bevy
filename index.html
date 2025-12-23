@@ -9,12 +9,14 @@
       rel="rust"
       href="Cargo.toml"
       data-wasm-opt="z"
-      data-lib="legend_client"
+      data-target-name="legend_client"
     />
     <link data-trunk rel="css" href="style/main.css" />
     <link data-trunk rel="copy-dir" href="public/assets" />
+    <link data-trunk rel="copy-file" href="public/debug.js" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app"><h1>Loading Game...</h1></div>
+    <script src="debug.js"></script>
   </body>
 </html>
