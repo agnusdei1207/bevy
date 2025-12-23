@@ -4,6 +4,7 @@ use super::resources::*;
 use crate::shared::domain::{Direction, MonsterAIType, PlayerClass};
 use crate::shared::domain::character::models::Player;
 use crate::shared::domain::monster::{Monster, MonsterData, SpriteSize};
+use crate::shared::domain::skill::models::Skill;
 use crate::shared::domain::shared::models::Position;
 
 const ISO_CHART_WIDTH: f32 = 64.0;
@@ -31,7 +32,11 @@ const MP_BAR_FG: Color = Color::srgb(0.1, 0.3, 0.8);
 pub fn spawn_game_world(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    i18n: Res<I18nResource>,
+    assets: Res<GameAssets>,
 ) {
+    // ... existing tile spawning ...
+    
     // Millres Layout (16x16)
     let layout = [
         "GGGGGGSSSSGGGGGG", // 0
@@ -52,8 +57,6 @@ pub fn spawn_game_world(
         "GGGGGGSSSSGGGGGG", // 15
     ];
 
-    // let texture_handle = asset_server.load("assets/tiles/ground/tileset.png");
-    
     for (y, row) in layout.iter().enumerate() {
         for (x, char) in row.chars().enumerate() {
             let tile_type = match char {
@@ -87,7 +90,7 @@ pub fn spawn_game_world(
             ));
         }
     }
-    
+
     let spawn_pos = project_iso(8.0, 8.0);
 
     // Spawn player
@@ -109,27 +112,28 @@ pub fn spawn_game_world(
         },
         AnimationState::default(),
         CombatState::default(),
+        ActiveSkills::default(),
         CameraTarget,
     ));
     
     // Spawn some monsters
     let monster_positions = vec![
-        (3, 3, "슬라임", 1),
-        (3, 13, "슬라임", 1),
-        (13, 3, "고블린", 3),
-        (13, 13, "스켈레톤", 5),
+        (3, 3, "monsters.slime", 1),
+        (3, 13, "monsters.slime", 1),
+        (13, 3, "monsters.goblin", 3),
+        (13, 13, "monsters.skeleton", 5),
     ];
     
     for (x, y, name, level) in monster_positions {
-        spawn_monster(&mut commands, x, y, name, level);
+        spawn_monster(&mut commands, x, y, name, level, &i18n);
     }
     
     // Spawn NPCs (Shopkeeper and Innkeeper)
-    spawn_npc(&mut commands, 2, 2, "여관 주인", InteractionType::NpcChat("따뜻한 침대가 준비되어 있습니다.".to_string()));
-    spawn_npc(&mut commands, 12, 11, "상점 주인", InteractionType::NpcChat("무엇을 도와드릴까요?".to_string()));
+    spawn_npc(&mut commands, 2, 2, &i18n.t("ui.innkeeper"), InteractionType::NpcChat(i18n.t("ui.innkeeper_msg")));
+    spawn_npc(&mut commands, 12, 11, &i18n.t("ui.shopkeeper"), InteractionType::NpcChat(i18n.t("ui.shopkeeper_msg")));
 
     // Spawn HUD
-    spawn_hud(&mut commands);
+    spawn_hud(&mut commands, assets.ui_font.clone());
 }
 
 fn spawn_npc(commands: &mut Commands, x: i32, y: i32, name: &str, interaction: InteractionType) {
@@ -151,10 +155,10 @@ fn spawn_npc(commands: &mut Commands, x: i32, y: i32, name: &str, interaction: I
     ));
 }
 
-fn spawn_monster(commands: &mut Commands, grid_x: i32, grid_y: i32, name: &str, level: i32) {
+fn spawn_monster(commands: &mut Commands, grid_x: i32, grid_y: i32, name: &str, level: i32, i18n: &I18nResource) {
     let monster_data = MonsterData {
         id: 0,
-        name: name.to_string(),
+        name: i18n.t(name),
         level,
         max_hp: 30 + level * 10,
         attack_min: 2 + level,
@@ -203,7 +207,7 @@ fn spawn_monster(commands: &mut Commands, grid_x: i32, grid_y: i32, name: &str, 
     ));
 }
 
-fn spawn_hud(commands: &mut Commands) {
+fn spawn_hud(commands: &mut Commands, font: Handle<Font>) {
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
@@ -219,6 +223,7 @@ fn spawn_hud(commands: &mut Commands) {
         parent.spawn((
             Text::new("Lv.1"),
             TextFont {
+                font: font.clone(),
                 font_size: 24.0,
                 ..default()
             },
@@ -274,6 +279,7 @@ fn spawn_hud(commands: &mut Commands) {
         parent.spawn((
             Text::new("💰 100"),
             TextFont {
+                font: font,
                 font_size: 18.0,
                 ..default()
             },
@@ -505,61 +511,93 @@ pub fn interaction_system(
 pub fn skill_system(
     time: Res<Time>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut player_query: Query<(&GridPosition, &Facing, &mut Player), With<PlayerComponent>>,
+    mut player_query: Query<(&GridPosition, &Facing, &mut Player, &mut ActiveSkills), With<PlayerComponent>>,
     mut monster_query: Query<(Entity, &GridPosition, &mut Monster), With<MonsterComponent>>,
     mut commands: Commands,
+    skill_data: Res<SkillData>,
+    i18n: Res<I18nResource>,
 ) {
-    let Ok((player_pos, facing, mut player)) = player_query.get_single_mut() else { return; };
+    let Ok((player_pos, facing, mut player, mut active_skills)) = player_query.get_single_mut() else { return; };
 
-    // Skill 1: Continuous Strike (Single target, high damage)
-    if keyboard_input.just_pressed(KeyCode::Digit1) {
-        if player.combat_stats.mp < 10 {
-            println!("❌ 마나가 부족합니다!");
-            return;
-        }
-
-        let (dx, dy) = match facing.direction {
-            Direction::Up => (0, -1),
-            Direction::Down => (0, 1),
-            Direction::Left => (-1, 0),
-            Direction::Right => (1, 0),
-        };
-
-        let tx = player_pos.x + dx;
-        let ty = player_pos.y + dy;
-
-        println!("🔥 연공(Continuous Strike) 발동!");
-        player.combat_stats.mp -= 10;
-
-        for (entity, m_pos, mut monster) in &mut monster_query {
-            if m_pos.x == tx && m_pos.y == ty {
-                let damage = player.combat_stats.attack_max * 2;
-                monster.hp -= damage;
-                println!("💥 {}에게 {} 연공 데미지!", monster.name, damage);
-                if monster.hp <= 0 { commands.entity(entity).despawn(); }
-                break;
-            }
-        }
+    // Update cooldown timers
+    for skill_cd in &mut active_skills.skills {
+        skill_cd.timer.tick(time.delta());
     }
 
-    // Skill 2: Whirlwind (AOE around player)
-    if keyboard_input.just_pressed(KeyCode::Digit2) {
-        if player.combat_stats.mp < 20 {
-            println!("❌ 마나가 부족합니다!");
-            return;
-        }
+    // Get skills for player's class
+    let player_class_id = player.class.id();
+    let available_skills: Vec<&Skill> = skill_data.skills.iter()
+        .filter(|s| (s.class_id == Some(player_class_id) || s.class_id.is_none()) && s.req_level <= player.level)
+        .collect();
 
-        println!("🌀 훨윈드(Whirlwind) 발동!");
-        player.combat_stats.mp -= 20;
+    let keys = [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5];
+    
+    for (i, key) in keys.iter().enumerate() {
+        if keyboard_input.just_pressed(*key) {
+            if let Some(skill) = available_skills.get(i) {
+                let skill_name = i18n.t(&skill.name);
+                
+                // Check cooldown
+                if let Some(skill_cd) = active_skills.skills.iter().find(|s| s.skill_id == skill.id) {
+                    if !skill_cd.timer.finished() {
+                        println!("⏳ {} {}", skill_name, i18n.t("ui.cooldown_msg"));
+                        continue;
+                    }
+                }
 
-        for (entity, m_pos, mut monster) in &mut monster_query {
-            let dx = (player_pos.x - m_pos.x).abs();
-            let dy = (player_pos.y - m_pos.y).abs();
-            if dx <= 1 && dy <= 1 {
-                let damage = player.combat_stats.attack_max + 5;
-                monster.hp -= damage;
-                println!("🌪️ {}에게 {} 범위 데미지!", monster.name, damage);
-                if monster.hp <= 0 { commands.entity(entity).despawn(); }
+                // Check MP
+                if player.combat_stats.mp < skill.mp_cost {
+                    println!("❌ {}", i18n.t("ui.not_enough_mp"));
+                    continue;
+                }
+
+                // Execute skill
+                println!("🔥 {} {}", i18n.t("ui.skill_activated"), skill_name);
+                player.combat_stats.mp -= skill.mp_cost;
+
+                // Set cooldown
+                if let Some(skill_cd) = active_skills.skills.iter_mut().find(|s| s.skill_id == skill.id) {
+                    skill_cd.timer.set_duration(std::time::Duration::from_millis(skill.cooldown_ms as u64));
+                    skill_cd.timer.reset();
+                } else {
+                    active_skills.skills.push(SkillCooldown {
+                        skill_id: skill.id,
+                        timer: Timer::new(std::time::Duration::from_millis(skill.cooldown_ms as u64), TimerMode::Once),
+                    });
+                }
+
+                // Skill Effect handling
+                let (dx, dy) = match facing.direction {
+                    Direction::Up => (0, -1),
+                    Direction::Down => (0, 1),
+                    Direction::Left => (-1, 0),
+                    Direction::Right => (1, 0),
+                };
+
+                let tx = player_pos.x + dx;
+                let ty = player_pos.y + dy;
+
+                match skill.effect_type.as_deref() {
+                    Some("damage") => {
+                        for (entity, m_pos, mut monster) in &mut monster_query {
+                            if m_pos.x == tx && m_pos.y == ty {
+                                let damage = skill.base_value + (player.combat_stats.attack_max / 2);
+                                monster.hp -= damage;
+                                println!("💥 {}에게 {} {} 데미지!", monster.name, skill.name, damage);
+                                if monster.hp <= 0 { commands.entity(entity).despawn(); }
+                                break;
+                            }
+                        }
+                    }
+                    Some("heal") => {
+                        let heal_amt = skill.base_value;
+                        player.heal(heal_amt);
+                        println!("✨ {} 회복! (+{})", skill.name, heal_amt);
+                    }
+                    _ => {
+                        println!("ℹ️ {} 스킬이 사용되었습니다. (효과 미구현)", skill.name);
+                    }
+                }
             }
         }
     }

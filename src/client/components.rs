@@ -107,6 +107,7 @@ pub enum ButtonAction {
     ConfirmCharacter,
     BackToMenu,
     Quit,
+    ChangeLanguage(String),
 }
 
 /// HP Bar UI

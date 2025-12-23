@@ -153,6 +153,16 @@ impl PlayerClass {
         }
     }
     
+    pub fn id(&self) -> i32 {
+        match self {
+            PlayerClass::Warrior => 1,
+            PlayerClass::Rogue => 2,
+            PlayerClass::Mage => 3,
+            PlayerClass::Cleric => 4,
+            PlayerClass::MartialArtist => 5,
+        }
+    }
+
     pub fn get_base_stats(&self) -> Stats {
         // Legend of Darkness style roughly
         match self {

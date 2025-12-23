@@ -18,7 +18,7 @@ const TEXT_WHITE: Color = Color::srgb(0.9, 0.9, 0.9);
 
 // ============ Main Menu ============
 
-pub fn spawn_main_menu(mut commands: Commands) {
+pub fn spawn_main_menu(mut commands: Commands, i18n: Res<I18nResource>, assets: Res<GameAssets>) {
     commands
         .spawn((
             Node {
@@ -37,6 +37,7 @@ pub fn spawn_main_menu(mut commands: Commands) {
             parent.spawn((
                 Text::new("어둠의전설 M"),
                 TextFont {
+                    font: assets.ui_font.clone(),
                     font_size: 72.0,
                     ..default()
                 },
@@ -51,6 +52,7 @@ pub fn spawn_main_menu(mut commands: Commands) {
             parent.spawn((
                 Text::new("Legend of Darkness"),
                 TextFont {
+                    font: assets.ui_font.clone(),
                     font_size: 28.0,
                     ..default()
                 },
@@ -62,14 +64,55 @@ pub fn spawn_main_menu(mut commands: Commands) {
             ));
             
             // Start Game Button
-            spawn_menu_button(parent, "게임 시작", ButtonAction::CharacterSelect);
+            spawn_menu_button(parent, &i18n.t("ui.start_game"), ButtonAction::CharacterSelect, assets.ui_font.clone());
             
+            // Language Selection
+            parent.spawn(Node {
+                flex_direction: FlexDirection::Row,
+                margin: UiRect::vertical(Val::Px(20.0)),
+                ..default()
+            })
+            .with_children(|row| {
+                let langs = vec![("KO", "ko"), ("EN", "en"), ("JA", "ja"), ("ZH", "zh"), ("ES", "es"), ("FR", "fr")];
+                for (label, code) in langs {
+                    spawn_small_button(row, label, ButtonAction::ChangeLanguage(code.to_string()), assets.ui_font.clone());
+                }
+            });
+
             // Quit Button
-            spawn_menu_button(parent, "종료", ButtonAction::Quit);
+            spawn_menu_button(parent, &i18n.t("ui.quit"), ButtonAction::Quit, assets.ui_font.clone());
         });
 }
 
-fn spawn_menu_button(parent: &mut ChildBuilder, text: &str, action: ButtonAction) {
+fn spawn_small_button(parent: &mut ChildBuilder, text: &str, action: ButtonAction, font: Handle<Font>) {
+    parent
+        .spawn((
+            Button,
+            Node {
+                width: Val::Px(40.0),
+                height: Val::Px(30.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                margin: UiRect::all(Val::Px(5.0)),
+                ..default()
+            },
+            BackgroundColor(DARK_PANEL),
+            action,
+        ))
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(text.to_string()),
+                TextFont {
+                    font,
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(TEXT_WHITE),
+            ));
+        });
+}
+
+fn spawn_menu_button(parent: &mut ChildBuilder, text: &str, action: ButtonAction, font: Handle<Font>) {
     parent
         .spawn((
             Button,
@@ -88,8 +131,9 @@ fn spawn_menu_button(parent: &mut ChildBuilder, text: &str, action: ButtonAction
         ))
         .with_children(|btn| {
             btn.spawn((
-                Text::new(text),
+                Text::new(text.to_string()),
                 TextFont {
+                    font,
                     font_size: 24.0,
                     ..default()
                 },
@@ -105,6 +149,7 @@ pub fn main_menu_interaction(
     >,
     mut next_state: ResMut<NextState<GameState>>,
     mut exit: EventWriter<AppExit>,
+    mut i18n: ResMut<I18nResource>,
 ) {
     for (interaction, action, mut bg_color) in &mut interaction_query {
         match *interaction {
@@ -115,6 +160,11 @@ pub fn main_menu_interaction(
                     }
                     ButtonAction::Quit => {
                         exit.send(AppExit::Success);
+                    }
+                    ButtonAction::ChangeLanguage(code) => {
+                        i18n.current_lang = code.clone();
+                        i18n.pack = serde_json::json!({}); // Clear current pack
+                        next_state.set(GameState::Loading);
                     }
                     _ => {}
                 }
@@ -143,6 +193,8 @@ pub fn cleanup_main_menu(
 pub fn spawn_character_select(
     mut commands: Commands,
     mut selected_class: ResMut<SelectedClass>,
+    i18n: Res<I18nResource>,
+    assets: Res<GameAssets>,
 ) {
     selected_class.class = Some(PlayerClass::Warrior);
     selected_class.gender = "male".to_string();
@@ -164,8 +216,9 @@ pub fn spawn_character_select(
         .with_children(|parent| {
             // Title
             parent.spawn((
-                Text::new("직업 선택"),
+                Text::new(i18n.t("ui.character_select")),
                 TextFont {
+                    font: assets.ui_font.clone(),
                     font_size: 48.0,
                     ..default()
                 },
@@ -187,22 +240,22 @@ pub fn spawn_character_select(
                 },
             ))
             .with_children(|row| {
-                spawn_class_button(row, "전사", PlayerClass::Warrior);
-                spawn_class_button(row, "도적", PlayerClass::Rogue);
-                spawn_class_button(row, "마법사", PlayerClass::Mage);
-                spawn_class_button(row, "성직자", PlayerClass::Cleric);
-                spawn_class_button(row, "무도가", PlayerClass::MartialArtist);
+                spawn_class_button(row, &i18n.t("ui.warrior"), PlayerClass::Warrior, assets.ui_font.clone());
+                spawn_class_button(row, &i18n.t("ui.rogue"), PlayerClass::Rogue, assets.ui_font.clone());
+                spawn_class_button(row, &i18n.t("ui.mage"), PlayerClass::Mage, assets.ui_font.clone());
+                spawn_class_button(row, &i18n.t("ui.cleric"), PlayerClass::Cleric, assets.ui_font.clone());
+                spawn_class_button(row, &i18n.t("ui.martial_artist"), PlayerClass::MartialArtist, assets.ui_font.clone());
             });
             
             // Confirm button
-            spawn_menu_button(parent, "확인", ButtonAction::ConfirmCharacter);
+            spawn_menu_button(parent, &i18n.t("ui.select"), ButtonAction::ConfirmCharacter, assets.ui_font.clone());
             
             // Back button
-            spawn_menu_button(parent, "뒤로", ButtonAction::BackToMenu);
+            spawn_menu_button(parent, &i18n.t("ui.back"), ButtonAction::BackToMenu, assets.ui_font.clone());
         });
 }
 
-fn spawn_class_button(parent: &mut ChildBuilder, text: &str, class: PlayerClass) {
+fn spawn_class_button(parent: &mut ChildBuilder, text: &str, class: PlayerClass, font: Handle<Font>) {
     parent
         .spawn((
             Button,
@@ -222,8 +275,9 @@ fn spawn_class_button(parent: &mut ChildBuilder, text: &str, class: PlayerClass)
         ))
         .with_children(|btn| {
             btn.spawn((
-                Text::new(text),
+                Text::new(text.to_string()),
                 TextFont {
+                    font,
                     font_size: 20.0,
                     ..default()
                 },

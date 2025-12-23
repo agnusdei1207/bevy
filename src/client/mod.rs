@@ -25,14 +25,16 @@ impl Plugin for LegendGamePlugin {
             .insert_resource(resources::GameConfig::default())
             .insert_resource(resources::GameAssets::default())
             .insert_resource(resources::SelectedClass::default())
+            .insert_resource(resources::SkillData::default())
+            .insert_resource(resources::I18nResource::default())
             
             // Startup systems
             .add_systems(Startup, (
                 systems::setup_camera,
-                systems::load_assets,
             ))
             
             // Loading state
+            .add_systems(OnEnter(GameState::Loading), systems::load_assets)
             .add_systems(Update, (
                 systems::check_assets_loaded,
             ).run_if(in_state(GameState::Loading)))

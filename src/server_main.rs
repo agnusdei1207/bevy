@@ -50,7 +50,8 @@ async fn main() {
         .route("/login", post(legend_client::server::auth::login_handler))
         .route("/register", post(legend_client::server::auth::register_handler))
         .route("/monsters", get(legend_client::server::monsters::get_monsters))
-        .route("/monsters/{id}", get(legend_client::server::monsters::get_monster_by_id));
+        .route("/monsters/{id}", get(legend_client::server::monsters::get_monster_by_id))
+        .route("/skills", get(legend_client::server::skills::get_skills));
     
     // Main Router
     let app = Router::new()

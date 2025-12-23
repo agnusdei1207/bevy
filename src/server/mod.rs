@@ -8,3 +8,6 @@ pub mod db;
 
 #[cfg(feature = "server")]
 pub mod monsters;
+
+#[cfg(feature = "server")]
+pub mod skills;
