@@ -1,0 +1,18 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+[[features]]
+enabled = ["wasm"]
+
+[serve]
+address = "127.0.0.1"
+port = 8080
+
+[[common.copy]]
+from = "public/assets"
+to = "assets"
+
+[proxy]
+backend = "http://api:3000/api"
+rewrite = "/api"

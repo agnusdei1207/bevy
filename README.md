@@ -35,6 +35,8 @@ cp .env.example .env
 
 ### 2. 서버 실행 (API + DB)
 
+모든 개발은 Docker 컨테이너 내에서 이루어집니다.
+
 ```bash
 docker compose up -d db adminer api
 ```
@@ -44,42 +46,59 @@ docker compose up -d db adminer api
 - 🔌 **API 서버**: [http://localhost:3000](http://localhost:3000)
 - 🗄️ **DB 관리자**: [http://localhost:8081](http://localhost:8081)
 
-### 3. 게임 클라이언트 실행
+---
 
-⚠️ **Bevy 게임은 네이티브 앱입니다. 로컬에 Rust가 설치되어 있어야 합니다.**
+## 🛠️ 개발 및 빌드 가이드 (Dev Container)
+
+개발 환경에 아무것도 설치할 필요 없이 `docker compose` 명령만으로 모든 작업을 수행할 수 있습니다.
+
+### 1. 웹(Web/WASM) 개발 (Trunk)
+
+브라우저에서 게임을 실시간으로 확인하며 개발할 때 사용합니다.
 
 ```bash
-# 로컬 Rust 설치 필요 (https://rustup.rs)
-cargo run --bin legend-game --features client
+# Trunk 서버 실행 (핫 리로드 지원)
+docker compose run --rm -p 8080:8080 game trunk serve --address 0.0.0.0
 ```
 
-또는 Docker에서 빌드만 하고 싶다면:
+- 🌐 **게임 접속**: [http://localhost:8080](http://localhost:8080)
+- **특징**: 코드를 수정하면 자동으로 다시 빌드되어 브라우저에 반영됩니다. API 요청은 내장된 Proxy 설정을 통해 자동으로 백엔드로 전달됩니다.
+
+### 2. 네이티브(Native) 빌드
+
+데스크톱 실행 파일(Windows/Linux)을 빌드할 때 사용합니다.
 
 ```bash
+# 네이티브 바이너리 빌드 (target/debug/legend-game)
+docker compose run --rm game cargo build --bin legend-game --features client
+
+# 릴리즈 빌드 (최적화 버전)
 docker compose run --rm game cargo build --bin legend-game --features client --release
+```
+
+### 3. 데이터베이스 관리 (Migration)
+
+DB 스키마를 변경하거나 데이터를 업데이트할 때 사용합니다.
+
+```bash
+# 새로운 마이그레이션 파일 생성
+docker compose run --rm api sqlx migrate add [이름]
+
+# 마이그레이션 적용
+docker compose run --rm api sqlx migrate run
 ```
 
 ---
 
-## 🌐 웹에서 게임을 띄우고 싶다면?
+## 🌐 웹 배포용 정적 빌드
 
-Bevy는 WASM으로 컴파일하면 웹에서도 실행 가능하지만, 추가 설정이 필요합니다:
+최종 배포를 위한 정적 파일(HTML/JS/WASM)을 생성합니다.
 
 ```bash
-# WASM 타겟 설치
-rustup target add wasm32-unknown-unknown
-
-# wasm-bindgen 설치
-cargo install wasm-bindgen-cli
-
-# WASM 빌드
-cargo build --bin legend-game --features client --target wasm32-unknown-unknown --release
-
-# JS 바인딩 생성
-wasm-bindgen --out-dir ./web --target web ./target/wasm32-unknown-unknown/release/legend-game.wasm
+docker compose run --rm game trunk build --release
 ```
 
-> 💡 **팁**: 웹 배포가 주 목적이라면 Phaser.js 같은 웹 전용 게임 프레임워크도 고려해보세요.
+빌드 결과물은 `dist/` 폴더에 생성됩니다. 이 폴더의 내용물을 정적 웹 서버(Nginx, S3 등)에 올리면 배포가 완료됩니다.
 
 ---
 

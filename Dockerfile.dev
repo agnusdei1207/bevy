@@ -14,8 +14,10 @@ RUN apt update && apt install -y \
     libgl1-mesa-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install SQLx CLI for migrations
+# Install toolchains and CLI tools
+RUN rustup target add wasm32-unknown-unknown
 RUN cargo install sqlx-cli --no-default-features --features postgres
+RUN cargo install trunk
 
 WORKDIR /workspace
 
