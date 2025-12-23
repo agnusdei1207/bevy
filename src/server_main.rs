@@ -2,6 +2,7 @@
 //!
 //! Build: cargo build --features server
 //! Run: cargo run --features server
+// Force rebuild for database migration 2025-12-23
 
 #[cfg(feature = "server")]
 #[tokio::main]

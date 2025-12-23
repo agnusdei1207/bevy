@@ -20,6 +20,7 @@ pub struct MonsterComponent;
 pub struct MonsterAI {
     pub ai_type: MonsterAIType,
     pub detection_range: f32,
+    #[allow(dead_code)]
     pub attack_range: f32,
     #[allow(dead_code)]
     pub move_speed: f32,
