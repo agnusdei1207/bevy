@@ -1,2 +1,0 @@
-[2m2025-12-23T06:27:13.943489Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "_sqlx_migrations" already exists, skipping
-✅ Database connected and migrated

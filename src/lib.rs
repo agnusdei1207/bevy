@@ -1,28 +1,11 @@
-//! Legend of Darkness M - CSR Entry Point
+//! Legend of Darkness M - Shared Library
+//!
+//! This crate contains shared code between client and server.
 
-pub mod app;
-pub mod client;
 pub mod shared;
 
 #[cfg(feature = "server")]
 pub mod server;
 
-// Re-export App
-pub use app::App;
-
-// CSR: WASM entry point
-#[cfg(feature = "csr")]
-#[wasm_bindgen::prelude::wasm_bindgen(start)]
-pub fn start() {
-    use wasm_bindgen::JsCast;
-    
-    console_error_panic_hook::set_once();
-    _ = console_log::init_with_level(log::Level::Debug);
-    
-    log::info!("🎮 Legend of Darkness M - Starting...");
-    
-    let doc = web_sys::window().unwrap().document().unwrap();
-    let root = doc.get_element_by_id("app").unwrap();
-    
-    let _ = leptos::mount::mount_to(root.unchecked_into::<web_sys::HtmlElement>(), App);
-}
+#[cfg(feature = "client")]
+pub mod client;

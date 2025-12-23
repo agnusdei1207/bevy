@@ -1,23 +1,23 @@
-FROM rust:1.85-bookworm
+FROM rust:latest
 
-# System packages (clang needed for ring crate)
+# Install system dependencies for Bevy
 RUN apt update && apt install -y \
     pkg-config \
-    libssl-dev \
-    postgresql-client \
-    clang \
-    lld \
+    libasound2-dev \
+    libudev-dev \
+    libxkbcommon-dev \
+    libwayland-dev \
+    libx11-dev \
+    libxcursor-dev \
+    libxrandr-dev \
+    libxi-dev \
+    libgl1-mesa-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Rust Nightly with WASM target
-RUN rustup default nightly
-RUN rustup target add wasm32-unknown-unknown
-
-# Install trunk (for CSR frontend) and sqlx-cli
-RUN cargo install trunk --locked
-RUN cargo install sqlx-cli --no-default-features --features postgres --locked
+# Install SQLx CLI for migrations
+RUN cargo install sqlx-cli --no-default-features --features postgres
 
 WORKDIR /workspace
 
-# Default command
-CMD ["trunk", "serve", "--address", "0.0.0.0"]
+# Set up cargo caching
+ENV CARGO_HOME=/usr/local/cargo

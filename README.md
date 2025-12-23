@@ -2,103 +2,84 @@
 
 넥슨의 어둠의전설(Legend of Darkness) 스타일의 **온라인 픽셀 RPG 게임**
 
-**Rust + Leptos 0.8.7 + Axum 0.8.7 + SQLx 0.8 + PostgreSQL 18 apline**
-
-# 🛑 개발 환경 절대 원칙 (CRITICAL INSTRUCTION)
-
-# **"항상 OS에 어떠한 것도 설치하지 말고, Dev Container에서 다 해결하고, 파일만 로컬 마운트해서 사용하세요."**
-
-> **AI 에이전트 및 개발자 필독**: 위 원칙은 절대 타협할 수 없는 규칙입니다. **Host OS에는 오직 Docker만 설치되어 있어야 하며**, 모든 개발 도구(Rust, Node.js, DB 등)는 컨테이너 내부에 이미 구성되어 있습니다.
+**Rust + Bevy 0.15 + Axum 0.8 + SQLx 0.8 + PostgreSQL 18**
 
 ---
 
----
+## 🎮 Bevy란?
 
-## 📖 목차
+> **Bevy는 네이티브 데스크톱 게임 엔진입니다.**
 
-1. [개발 환경 설정 (Dev Container)](#-개발-환경-설정-dev-container) 👈 **가장 중요**
-2. [개요 및 특징](#-개요-및-특징)
-3. [기술 스택](#-기술-스택)
-4. [시스템 아키텍처](#-시스템-아키텍처)
-5. [프로젝트 구조](#-프로젝트-구조)
-6. [게임 조작법](#-게임-조작법)
-7. [에셋 및 디자인 가이드](#-에셋-및-디자인-가이드)
-8. [데이터베이스 스키마](#-데이터베이스-스키마)
-9. [로드맵](#-로드맵)
+| 특징          | 설명                                 |
+| ------------- | ------------------------------------ |
+| **실행 방식** | 데스크톱 앱 (Windows/Mac/Linux)      |
+| **빌드 필요** | `cargo build` 후 실행 파일 실행      |
+| **웹 지원**   | WASM 빌드 가능 (별도 설정 필요)      |
+| **장점**      | 게임 루프, 스프라이트, 물리엔진 내장 |
 
 ---
 
-## 🛠️ 개발 환경 설정 (Dev Container)
+## 🛑 개발 환경 절대 원칙
 
-**"Host OS에는 아무것도 설치하지 마세요."**
+> **"Host OS에는 Docker만 설치. 단, 게임 클라이언트는 로컬 Rust로 실행."**
 
-이 프로젝트는 **완전한 컨테이너 기반 개발 환경(Dev Container)**을 지향합니다. 로컬 머신에 Rust, PostgreSQL, Node.js 등을 설치할 필요가 전혀 없습니다.
+---
 
-### 1. 필수 요구사항
+## 🚀 빠른 시작
 
-- **Docker Only**: Docker Desktop 또는 Docker Engine만 있으면 됩니다.
-
-### 2. 환경 변수 설정
+### 1. 환경 변수 설정
 
 ```bash
 cp .env.example .env
 ```
 
-_(기본값: `postgres://legend:legend@db:5432/legend`)_
-
-### 3. 시작하기 (Quick Start)
-
-`docker compose up` 명령 하나로 모든 서비스(Frontend, Backend, DB)가 즉시 구축됩니다.
+### 2. 서버 실행 (API + DB)
 
 ```bash
-docker compose up --build
+docker compose up -d db adminer api
 ```
 
-- 최초 실행 시 Rust 컴파일로 인해 시간이 다소 소요될 수 있습니다. (Trunk & Cargo)
-- 빌드가 완료되면 터미널에 로그가 출력됩니다.
+접속 정보:
 
-### 4. 접속 정보
-
-- 🎮 **게임 클라이언트 (CSR)**: [http://localhost:8080](http://localhost:8080)
 - 🔌 **API 서버**: [http://localhost:3000](http://localhost:3000)
-- 🗄️ **DB 관리자 (Adminer)**: [http://localhost:8081](http://localhost:8081)
-- 🐘 **DB 접속 (Local Client)**: `localhost:5433` (User/PW/DB: `legend`)
+- 🗄️ **DB 관리자**: [http://localhost:8081](http://localhost:8081)
 
-### 5. 주요 개발 명령어
+### 3. 게임 클라이언트 실행
+
+⚠️ **Bevy 게임은 네이티브 앱입니다. 로컬에 Rust가 설치되어 있어야 합니다.**
 
 ```bash
-# DB만 백그라운드 실행
-docker compose up -d db adminer
+# 로컬 Rust 설치 필요 (https://rustup.rs)
+cargo run --bin legend-game --features client
+```
 
-# API 서버 로그 확인
-docker compose logs -f api
+또는 Docker에서 빌드만 하고 싶다면:
 
-# 프론트엔드 로그 확인
-docker compose logs -f frontend
-
-# 컨테이너 내부 쉘 접속
-docker exec -it legend-dev bash
-
-# (컨테이너 내부) DB 마이그레이션
-sqlx migrate run
+```bash
+docker compose run --rm game cargo build --bin legend-game --features client --release
 ```
 
 ---
 
-## 🏗️ 시스템 아키텍처
+## 🌐 웹에서 게임을 띄우고 싶다면?
 
-이 프로젝트는 **CSR(Client-Side Rendering) + REST API** 구조로 설계되었습니다.
+Bevy는 WASM으로 컴파일하면 웹에서도 실행 가능하지만, 추가 설정이 필요합니다:
 
-```mermaid
-graph LR
-    User[Client Browser] -->|Port 8080| Frontend[Frontend (CSR)]
-    Frontend -->|REST API (Port 3000/api)| Backend[Backend (Axum)]
-    Backend -->|Port 5432| DB[PostgreSQL 18]
+```bash
+# WASM 타겟 설치
+rustup target add wasm32-unknown-unknown
+
+# wasm-bindgen 설치
+cargo install wasm-bindgen-cli
+
+# WASM 빌드
+cargo build --bin legend-game --features client --target wasm32-unknown-unknown --release
+
+# JS 바인딩 생성
+wasm-bindgen --out-dir ./web --target web ./target/wasm32-unknown-unknown/release/legend-game.wasm
 ```
 
-- **Frontend (CSR)**: Leptos WASM 클라이언트. `trunk`를 통해 서빙됩니다. (Port 8080)
-- **Backend (API)**: Axum REST API 서버. 순수 데이터 처리를 담당합니다. (Port 3000)
-- **Database**: PostgreSQL 18 Alpine. (Port 5433 Host / 5432 Internal)
+> 💡 **팁**: 웹 배포가 주 목적이라면 Phaser.js 같은 웹 전용 게임 프레임워크도 고려해보세요.
 
 ---
 
@@ -107,163 +88,116 @@ graph LR
 ```
 legend/
 ├── src/
-│   ├── server_main.rs          # 서버 엔트리 (Axum 0.8)
-│   ├── lib.rs                  # 라이브러리/WASM 엔트리
-│   ├── app.rs                  # Leptos 앱 라우팅
+│   ├── game_main.rs          # 🎮 Bevy 게임 엔트리포인트
+│   ├── server_main.rs        # 🔌 Axum API 서버 엔트리포인트
+│   ├── lib.rs                # 라이브러리 루트
 │   │
-│   ├── client/                 # 클라이언트 (CSR)
-│   │   ├── components/         # UI 컴포넌트 (HUD, Windows, SkillWindow)
-│   │   └── game/               # 게임 로직 (Canvas, Systems, Input)
+│   ├── client/               # 🎮 Bevy 게임 클라이언트
+│   │   ├── mod.rs            # LegendGamePlugin (메인 플러그인)
+│   │   ├── states.rs         # GameState (Loading, Menu, Playing...)
+│   │   ├── components.rs     # ECS 컴포넌트들
+│   │   ├── resources.rs      # 게임 리소스들
+│   │   ├── systems.rs        # 카메라, 에셋 로딩
+│   │   ├── ui.rs             # 메뉴, HUD
+│   │   └── game.rs           # 월드, 플레이어, 몬스터, 전투
 │   │
-│   ├── server/                 # 서버 (API)
-│   │   ├── auth.rs             # 인증 핸들러 (Login/Register)
-│   │   └── db.rs               # DB 연결 관리
+│   ├── server/               # 🔌 Axum REST API
+│   │   ├── auth.rs           # 로그인/회원가입
+│   │   ├── db.rs             # DB 연결
+│   │   └── monsters.rs       # 몬스터 API
 │   │
-│   └── shared/                 # 공용 모듈 (Domain, DTO)
-│       ├── domain/             # 도메인 모델 (DDD)
-│       │   ├── character/      # 캐릭터, StatType, Player 로직
-│       │   ├── monster/        # 몬스터 AI 및 데이터
-│       │   ├── item/           # 아이템 및 인벤토리 모델
-│       │   └── skill/          # 스킬 정의 및 데이터
-│       └── mod.rs              # 도메인 re-export
+│   └── shared/               # 📦 공용 도메인 모델
+│       └── domain/
+│           ├── character/    # Player, PlayerClass, StatType
+│           ├── monster.rs    # Monster, MonsterAI
+│           ├── item/         # Item, Equipment
+│           ├── skill/        # Skill
+│           └── map.rs        # GameMap, Tile
 │
-├── public/                     # 정적 리소스
-│   └── assets/                 # 게임 에셋 (스프라이트, 오디오)
-└── style/                      # CSS (다크 판타지 테마)
+├── public/assets/            # 게임 에셋 (스프라이트, 오디오)
+├── migrations/               # SQLx 마이그레이션
+└── compose.yml               # Docker Compose
 ```
 
 ---
 
 ## 🛠 기술 스택
 
-| 분류           | 기술           | 버전            |
-| -------------- | -------------- | --------------- |
-| **프론트엔드** | Leptos         | 0.8 (CSR)       |
-| **백엔드**     | Axum           | 0.8 (REST API)  |
-| **DBMS**       | PostgreSQL     | 18 (Alpine)     |
-| **ORM**        | SQLx           | 0.8             |
-| **언어**       | Rust           | 1.85+ (Nightly) |
-| **인프라**     | Docker Compose | -               |
+| 분류          | 기술           | 버전                 |
+| ------------- | -------------- | -------------------- |
+| **게임 엔진** | Bevy           | 0.15                 |
+| **백엔드**    | Axum           | 0.8 (REST API)       |
+| **DBMS**      | PostgreSQL     | 18 (Alpine)          |
+| **ORM**       | SQLx           | 0.8                  |
+| **언어**      | Rust           | 1.85+ (Edition 2024) |
+| **인프라**    | Docker Compose | -                    |
+
+---
+
+## 🏗️ 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              Bevy Game Client (Native App)               │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐    │
+│  │ States  │  │   UI    │  │  Game   │  │ Systems │    │
+│  │ Machine │  │ (Menu,  │  │ (World, │  │(Camera, │    │
+│  │         │  │  HUD)   │  │ Combat) │  │ Input)  │    │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────┘    │
+└────────────────────────┬────────────────────────────────┘
+                         │ HTTP (REST API)
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│               Axum REST API (Docker)                     │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                 │
+│  │  Auth   │  │Monsters │  │  Items  │                 │
+│  │ Handler │  │ Handler │  │ Handler │                 │
+│  └─────────┘  └─────────┘  └─────────┘                 │
+└────────────────────────┬────────────────────────────────┘
+                         │ SQLx
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                PostgreSQL 18 (Docker)                    │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 🎯 게임 조작법
 
-### 이동 및 전투
-
-- **이동**: `W`, `A`, `S`, `D` 또는 방향키 (대각선/조합키 지원)
-- **공격/상호작용**: `Space`
-
-### 인터페이스
-
-- `C`: 캐릭터 창 (스탯/정보)
-- `I`: 인벤토리
-- `K`: 스킬 창
+| 키                       | 동작               |
+| ------------------------ | ------------------ |
+| `W` `A` `S` `D` / 화살표 | 이동 (대각선 지원) |
+| `Space`                  | 공격               |
+| `C`                      | 캐릭터 창 (예정)   |
+| `I`                      | 인벤토리 (예정)    |
+| `K`                      | 스킬 창 (예정)     |
 
 ---
 
-## 🎨 에셋 및 디자인 가이드
+## ✨ Leptos → Bevy 마이그레이션 이유
 
-이 섹션은 디자이너 및 AI 에이전트가 게임 에셋을 생성하거나 수정할 때 반드시 준수해야 하는 규칙입니다.
-
-### 1. 핵심 디자인 규칙
-
-#### 1타일 규칙 (One-Tile Rule) ⚠️ 중요
-
-> **모든 캐릭터와 몬스터는 시각적 크기와 관계없이 논리적으로 1타일(1칸)만 차지합니다.**
-
-- **적용 범위**: 충돌 판정, 이동 경로, 타겟팅, 스폰 위치 등 모든 게임 로직
-- **시각적 처리**: 드래곤(128px)처림 큰 스프라이트는 타일 중심에서 위로 확장되어 그려지지만, 발 밑의 1칸(32x32)이 실제 위치입니다.
-
-#### 색상 팔레트 (다크 판타지)
-
-- **기본/어둠**: `#0a0a0a` (배경), `#1a1a2e`, `#16213e`
-- **피/경고**: `#8b0000`, `#660000`
-- **마법/신비**: `#4a0080` (보라), `#2d1b4e`
-- **금지 색상**: 순수 흰색(#ffffff), 파스텔 핑크/하늘색/민트색
-
-### 2. 스프라이트시트 규격
-
-모든 움직이는 엔티티는 아래의 **행(Row) 기반 레이아웃**을 따릅니다. 프레임 순서는 왼쪽에서 오른쪽입니다.
-
-```
-┌────────────────────────────────────────────────────────┐
-│ Frame 0  │ Frame 1  │ Frame 2  │ Frame 3  │ ...      │
-├────────────────────────────────────────────────────────┤
-│ Row 0: IDLE   (대기)     - 4 프레임 (600ms, 호흡)      │
-│ Row 1: MOVE   (이동)     - 4 프레임 (400ms, 걷기)      │
-│ Row 2: ATTACK (공격)     - 6 프레임 (500ms, 타격)      │
-│ Row 3: DEATH  (사망)     - 4 프레임 (600ms, 쓰러짐)    │
-└────────────────────────────────────────────────────────┘
-```
-
-#### 엔티티별 프레임 크기
-
-| 엔티티 타입     | 프레임 크기 (px) | 시트 크기 (예상) | 비고                        |
-| --------------- | ---------------- | ---------------- | --------------------------- |
-| **캐릭터**      | 64x64            | 384x256          | 모든 직업 동일              |
-| **소형 몬스터** | 32x32            | 192x128          | 슬라임, 쥐 (Lv 1-10)        |
-| **중형 몬스터** | 48x48            | 288x192          | 스켈레톤, 고블린 (Lv 11-50) |
-| **대형 몬스터** | 64x64            | 384x256          | 엘리트 몬스터 (Lv 51+)      |
-| **보스**        | 128x128          | 768x512          | 드래곤 등                   |
-
-### 3. 캐릭터 및 몬스터 디자인 가이드
-
-#### 캐릭터 (직업별 테마)
-
-- **전사**: 무거운 판금 갑옷, 전투로 닳은 느낌
-- **마법사**: 어두운 로브, 후드, 빛나는 눈
-- **도적**: 가벼운 가죽, 후드 망토, 암살자 미학
-- **성직자**: 낡은 성스러운 의복, 우아하지만 어두운 사제 로브
-- **무도가**: 맨가슴, 붕대, 흉터, 타이트한 전투복
-- **비율**: 성인 신체 비율 (7-8등신), SD 스타일(2등신)을 따르되 치비(Chibi) 비율은 지양
-
-### 4. 기술적 구현 (개발자 참고)
-
-**스프라이트 경로 로딩**
-
-```rust
-use crate::client::game::systems::{SpriteLoader, AnimationState};
-let path = SpriteLoader::get_character_sprite_path("warrior", "male", AnimationState::Idle);
-```
-
-**애니메이션 프레임 계산**
-
-```rust
-use crate::client::game::systems::AnimationCalculator;
-let frame = AnimationCalculator::get_frame_index(current_time_ms, frame_count, frame_duration_ms);
-```
-
-### 5. 폴더 구조
-
-모든 에셋은 `public/assets/` 내에 위치합니다.
-
-- **캐릭터**: `/assets/characters/{class}/{gender}_spritesheet.png`
-- **몬스터**: `/assets/monsters/{name}/spritesheet.png`
-- **스킬**: `/assets/skills/{class}/{skill_name}_fx.png`
-- **타일**: `/assets/tiles/ground/tileset.png`
-- **오디오**: `/assets/audio/bgm/`, `/assets/audio/sfx/`
+| Leptos (이전)       | Bevy (현재)                   |
+| ------------------- | ----------------------------- |
+| UI 프레임워크       | **게임 엔진**                 |
+| 게임 루프 직접 구현 | 내장 게임 루프                |
+| Canvas 2D 수동 관리 | 스프라이트/렌더링 자동화      |
+| 웹 브라우저만 지원  | **네이티브 + WASM 모두 지원** |
+| 디버깅 어려움       | 풍부한 디버깅 도구            |
 
 ---
 
-## 🗄️ 데이터베이스 스키마 요약
+## 📋 로드맵
 
-1. **players**: 닉네임, 성별, 직업, 레벨(1-99 서클), HP/MP
-2. **classes**: 직업별 기본 스탯 정의
-3. **skills**: 직업별 마법/기술 정보 (MP 소모, 데미지)
-4. **items**: 무기, 방어구, 악세서리 정보
-5. **monsters**: 몬스터 AI 타입 및 능력치
-
----
-
-## 🎯 로드맵
-
-- [ ] **멀티플레이어**: WebSocket 실시간 동기화
-- [ ] **채팅/파티/길드**: 커뮤니티 기능
-- [ ] **PVP**: 플레이어 간 전투
-- [ ] **사운드 구현**: BGM 및 효과음 시스템 연동
-- [ ] **모바일**: 터치 컨트롤 최적화
+- [x] Bevy로 마이그레이션
+- [x] 기본 이동/전투 시스템
+- [x] 메인 메뉴 / 직업 선택
+- [ ] 스프라이트 애니메이션
+- [ ] 멀티플레이어 (WebSocket)
+- [ ] 인벤토리 시스템
+- [ ] 스킬 시스템
+- [ ] WASM 웹 빌드
 
 ---
 
-**Made with 🦀 Rust + ⚡ Leptos 0.8 + 🚀 Axum 0.8 + 🐘 PostgreSQL**
+**Made with 🦀 Rust + 🎮 Bevy 0.15 + 🚀 Axum 0.8 + 🐘 PostgreSQL**

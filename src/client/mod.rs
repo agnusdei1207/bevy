@@ -1,4 +1,62 @@
-//! Client module - CSR components and game logic
+//! Legend of Darkness M - Bevy Game Client
+//!
+//! This module contains the Bevy game implementation.
 
-pub mod components;
-pub mod game;
+mod game;
+mod ui;
+mod systems;
+mod states;
+mod components;
+mod resources;
+
+use bevy::prelude::*;
+use states::GameState;
+
+/// Main game plugin that sets up all game systems
+pub struct LegendGamePlugin;
+
+impl Plugin for LegendGamePlugin {
+    fn build(&self, app: &mut App) {
+        app
+            // Game states
+            .init_state::<GameState>()
+            
+            // Resources
+            .insert_resource(resources::GameConfig::default())
+            .insert_resource(resources::PlayerData::default())
+            .insert_resource(resources::GameAssets::default())
+            
+            // Startup systems
+            .add_systems(Startup, (
+                systems::setup_camera,
+                systems::load_assets,
+            ))
+            
+            // Loading state
+            .add_systems(Update, (
+                systems::check_assets_loaded,
+            ).run_if(in_state(GameState::Loading)))
+            
+            // Main menu state
+            .add_systems(OnEnter(GameState::MainMenu), ui::spawn_main_menu)
+            .add_systems(Update, ui::main_menu_interaction.run_if(in_state(GameState::MainMenu)))
+            .add_systems(OnExit(GameState::MainMenu), ui::cleanup_main_menu)
+            
+            // Character select state
+            .add_systems(OnEnter(GameState::CharacterSelect), ui::spawn_character_select)
+            .add_systems(Update, ui::character_select_interaction.run_if(in_state(GameState::CharacterSelect)))
+            .add_systems(OnExit(GameState::CharacterSelect), ui::cleanup_character_select)
+            
+            // Playing state
+            .add_systems(OnEnter(GameState::Playing), game::spawn_game_world)
+            .add_systems(Update, (
+                game::player_movement,
+                game::player_animation,
+                game::camera_follow,
+                game::monster_ai,
+                game::combat_system,
+                ui::update_hud,
+            ).run_if(in_state(GameState::Playing)))
+            .add_systems(OnExit(GameState::Playing), game::cleanup_game_world);
+    }
+}

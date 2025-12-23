@@ -1,22 +1,22 @@
 services:
-  # Frontend - CSR (Client-Side Rendering) with trunk
-  frontend:
+  # Game Client - Bevy native (for development)
+  # For web builds, use: cargo build --target wasm32-unknown-unknown --features wasm
+  game:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: legend-frontend
-    # 컨테이너 종료 대기 시간을 주어 볼륨 점유 해제를 돕습니다.
+    container_name: legend-game
     stop_grace_period: 3s
     volumes:
       - .:/workspace:cached
       - cargo-cache:/usr/local/cargo/registry
       - target-cache:/workspace/target
-    ports:
-      - "8080:8080"
     working_dir: /workspace
+    # Native desktop game (X11 forwarding required for display)
+    # Use: docker compose run game cargo run --bin legend-game --features client
+    command: cargo build --bin legend-game --features client
     depends_on:
       - api
-    command: trunk serve --address 0.0.0.0
 
   # API (Application Programming Interface) Server
   api:
@@ -38,7 +38,7 @@ services:
       db:
         condition: service_healthy
     working_dir: /workspace
-    command: cargo run --features server
+    command: cargo run --bin legend-api --features server
 
   # DB (Database)
   db:
@@ -57,6 +57,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Adminer for DB management
+  adminer:
+    image: adminer
+    container_name: legend-adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
 
 volumes:
   cargo-cache:
