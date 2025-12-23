@@ -1,6 +1,25 @@
 services:
   # Game Client - Bevy native (for development)
   # For web builds, use: cargo build --target wasm32-unknown-unknown --features wasm
+  # Web Client - Trunk (WASM)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: legend-web
+    stop_grace_period: 3s
+    volumes:
+      - .:/workspace:cached
+      - cargo-cache:/usr/local/cargo/registry
+      - target-cache:/workspace/target
+    ports:
+      - "8080:8080"
+    working_dir: /workspace
+    command: trunk serve --address 0.0.0.0
+    depends_on:
+      - api
+
+  # Native Game Build (can still be used for cargo build/run)
   game:
     build:
       context: .
@@ -15,6 +34,7 @@ services:
     # Native desktop game (X11 forwarding required for display)
     # Use: docker compose run game cargo run --bin legend-game --features client
     command: cargo build --bin legend-game --features client
+    profiles: ["native"]
     depends_on:
       - api
 

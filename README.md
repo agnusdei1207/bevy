@@ -33,16 +33,17 @@
 cp .env.example .env
 ```
 
-### 2. 서버 실행 (API + DB)
+### 2. 서비스 실행 (웹 게임 + API + DB)
 
-모든 개발은 Docker 컨테이너 내에서 이루어집니다.
+모든 개발 및 실행은 Docker 컨테이너 내에서 이루어집니다.
 
 ```bash
-docker compose up -d db adminer api
+docker compose up -d
 ```
 
 접속 정보:
 
+- 🎮 **웹 게임 접속**: [http://localhost:8080](http://localhost:8080)
 - 🔌 **API 서버**: [http://localhost:3000](http://localhost:3000)
 - 🗄️ **DB 관리자**: [http://localhost:8081](http://localhost:8081)
 
@@ -52,17 +53,15 @@ docker compose up -d db adminer api
 
 개발 환경에 아무것도 설치할 필요 없이 `docker compose` 명령만으로 모든 작업을 수행할 수 있습니다.
 
-### 1. 웹(Web/WASM) 개발 (Trunk)
+### 1. 웹(Web/WASM) 개발 및 실시간 확인
 
-브라우저에서 게임을 실시간으로 확인하며 개발할 때 사용합니다.
+`docker compose up`을 실행하면 이미 웹 서버가 8080 포트에서 실행 중입니다. 코드를 수정하면 자동으로 다시 빌드되어 브라우저에 반영됩니다.
+
+만약 로그를 실시간으로 보거나 독립적으로 실행하고 싶다면:
 
 ```bash
-# Trunk 서버 실행 (핫 리로드 지원)
-docker compose run --rm -p 8080:8080 game trunk serve --address 0.0.0.0
+docker compose logs -f web
 ```
-
-- 🌐 **게임 접속**: [http://localhost:8080](http://localhost:8080)
-- **특징**: 코드를 수정하면 자동으로 다시 빌드되어 브라우저에 반영됩니다. API 요청은 내장된 Proxy 설정을 통해 자동으로 백엔드로 전달됩니다.
 
 ### 2. 네이티브(Native) 빌드
 

@@ -13,15 +13,14 @@ pub async fn get_skills(class_id: Option<i32>, level: i32) -> Result<Vec<Skill>,
         if #[cfg(feature = "server")] {
             let pool = crate::server::db::get_db_pool();
             
-            let skills = sqlx::query_as!(
-                Skill,
-                "SELECT id, name, class_id, req_level, mp_cost, cooldown_ms, description, effect_type, base_value, icon_path FROM skill_definitions WHERE (class_id = $1 OR class_id IS NULL) AND req_level <= $2",
-                class_id,
-                level
+            let skills = sqlx::query_as::<_, Skill>(
+                "SELECT id, name, class_id, req_level, mp_cost, cooldown_ms, description, effect_type, base_value, icon_path FROM skill_definitions WHERE (class_id = $1 OR class_id IS NULL) AND req_level <= $2"
             )
+            .bind(class_id)
+            .bind(level)
             .fetch_all(pool)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e: sqlx::Error| e.to_string())?;
             
             Ok(skills)
         } else {

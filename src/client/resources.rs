@@ -5,7 +5,9 @@ use bevy::prelude::*;
 /// Game configuration
 #[derive(Resource)]
 pub struct GameConfig {
+    #[allow(dead_code)]
     pub tile_size: f32,
+    #[allow(dead_code)]
     pub player_speed: f32,
 }
 

@@ -20,6 +20,7 @@ fn project_iso(grid_x: f32, grid_y: f32) -> Vec2 {
 
 // ============ Color Constants ============
 
+#[allow(dead_code)]
 const GRASS_COLOR: Color = Color::srgb(0.2, 0.35, 0.2);
 const PLAYER_COLOR: Color = Color::srgb(0.3, 0.5, 0.8);
 const MONSTER_COLOR: Color = Color::srgb(0.8, 0.2, 0.2);
@@ -31,7 +32,7 @@ const MP_BAR_FG: Color = Color::srgb(0.1, 0.3, 0.8);
 
 pub fn spawn_game_world(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    _asset_server: Res<AssetServer>,
     i18n: Res<I18nResource>,
     assets: Res<GameAssets>,
 ) {
@@ -337,7 +338,7 @@ pub fn character_grid_movement(
         &mut Sprite,
     )>,
 ) {
-    for (mut transform, mut grid_pos, target_pos, mut progress, mut sprite) in &mut query {
+    for (mut transform, mut grid_pos, target_pos, mut progress, _) in &mut query {
         if grid_pos.x != target_pos.x || grid_pos.y != target_pos.y {
             progress.timer.tick(time.delta());
             
@@ -382,7 +383,7 @@ pub fn player_animation(
             }
             
             // simple bobbing
-            let bob = (anim.current_frame as f32 * 0.1).sin() * 2.0;
+            let _bob = (anim.current_frame as f32 * 0.1).sin() * 2.0;
             sprite.color = Color::srgb(0.3, 0.5, 0.8);
         } else {
             sprite.color = Color::srgb(0.3, 0.5, 0.8);
@@ -413,7 +414,7 @@ pub fn camera_follow(
 pub fn monster_ai(
     player_query: Query<&GridPosition, With<PlayerComponent>>,
     mut monster_query: Query<
-        (&GridPosition, &mut TargetGridPosition, &mut MonsterAI, &mut Facing),
+        (&GridPosition, &mut TargetGridPosition, &MonsterAI, &mut Facing),
         (With<MonsterComponent>, Without<PlayerComponent>),
     >,
 ) {
@@ -421,7 +422,7 @@ pub fn monster_ai(
         return;
     };
     
-    for (grid_pos, mut target_pos, mut ai, mut facing) in &mut monster_query {
+    for (grid_pos, mut target_pos, ai, mut facing) in &mut monster_query {
         // Only move if currently at a grid position
         if grid_pos.x == target_pos.x && grid_pos.y == target_pos.y {
             let dx = player_grid_pos.x - grid_pos.x;

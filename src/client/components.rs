@@ -2,8 +2,6 @@
 
 use bevy::prelude::*;
 use crate::shared::domain::{Direction, PlayerClass, MonsterAIType};
-use crate::shared::domain::character::models::Player;
-use crate::shared::domain::monster::Monster;
 
 // ============ Player Components ============
 
@@ -23,7 +21,9 @@ pub struct MonsterAI {
     pub ai_type: MonsterAIType,
     pub detection_range: f32,
     pub attack_range: f32,
+    #[allow(dead_code)]
     pub move_speed: f32,
+    #[allow(dead_code)]
     pub target: Option<Entity>,
     pub spawn_position: Vec2,
 }
@@ -46,6 +46,7 @@ impl Default for Facing {
 
 /// Velocity component for movement
 #[derive(Component, Default)]
+#[allow(dead_code)]
 pub struct Velocity {
     pub x: f32,
     pub y: f32,
@@ -72,7 +73,9 @@ impl Default for AnimationState {
 /// Combat state component
 #[derive(Component)]
 pub struct CombatState {
+    #[allow(dead_code)]
     pub is_attacking: bool,
+    #[allow(dead_code)]
     pub attack_timer: Timer,
 }
 
@@ -168,8 +171,9 @@ pub enum TileType {
     Door,
 }
 
-/// TileMap resource/component
+/// Map component
 #[derive(Component)]
+#[allow(dead_code)]
 pub struct TileMap {
     pub width: i32,
     pub height: i32,
@@ -191,12 +195,15 @@ pub struct Interactable {
 #[derive(Debug, Clone)]
 pub enum InteractionType {
     NpcChat(String),
+    #[allow(dead_code)]
     Portal { target_map: String, target_pos: GridPosition },
+    #[allow(dead_code)]
     PickUp,
 }
 
 /// Marker for portal tiles (Doors)
 #[derive(Component)]
+#[allow(dead_code)]
 pub struct Portal {
     pub target_map: String,
     pub target_pos: GridPosition,
