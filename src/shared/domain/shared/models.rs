@@ -11,6 +11,12 @@ pub struct Stats {
 
 impl Stats {
     pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl Default for Stats {
+    fn default() -> Self {
         Self {
             str: 10,
             dex: 10,

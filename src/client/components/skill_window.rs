@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use crate::shared::domain::Player;
-use crate::domain::skill::components::SkillWindow as DomainSkillWindow;
+use crate::shared::domain::skill::components::SkillWindow as DomainSkillWindow;
 
 #[component]
 pub fn SkillWindow(

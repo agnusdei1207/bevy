@@ -4,7 +4,7 @@
 //!
 //! hydrate feature가 활성화된 경우에만 렌더링 기능 사용
 
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "csr")]
 use web_sys::{CanvasRenderingContext2d, HtmlImageElement};
 
 use crate::shared::domain::map::{MapData, TileType, MapObject, ObjectType};
@@ -36,14 +36,14 @@ impl MapRenderer {
     }
 
     /// 맵 렌더링 (hydrate only)
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "csr")]
     pub fn render(
         &self, 
         ctx: &CanvasRenderingContext2d, 
         map_data: &MapData, 
-        tileset: &Option<HtmlImageElement>,
-        buildings: &Option<HtmlImageElement>,
-        decorations: &Option<HtmlImageElement>
+        tileset: Option<&HtmlImageElement>,
+        buildings: Option<&HtmlImageElement>,
+        decorations: Option<&HtmlImageElement>
     ) {
         // 바닥 타일 렌더링
         if let Some(sheet) = tileset {
@@ -138,7 +138,7 @@ impl MapRenderer {
         }
     }
 
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "csr")]
     fn draw_iso_tile(&self, ctx: &CanvasRenderingContext2d, x: f64, y: f64, color: &str) {
         let hw = self.tile_width / 2.0;
         let hh = self.tile_height / 2.0;
@@ -149,27 +149,26 @@ impl MapRenderer {
         ctx.line_to(x, y + hh);
         ctx.line_to(x - hw, y);
         ctx.close_path();
-        
-        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(color));
+        ctx.set_fill_style_str(color);
         ctx.fill();
         
-        ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("#0a0a0a"));
+        ctx.set_stroke_style_str("#0a0a0a");
         ctx.set_line_width(0.5);
         ctx.stroke();
     }
 
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "csr")]
     fn draw_torch_placeholder(&self, ctx: &CanvasRenderingContext2d, x: f64, y: f64) {
-        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("#2d3748"));
+        ctx.set_fill_style_str("#2d3748");
         ctx.fill_rect(x - 2.0, y - 20.0, 4.0, 20.0);
         
         ctx.begin_path();
         let _ = ctx.arc(x, y - 24.0, 6.0, 0.0, std::f64::consts::PI * 2.0);
-        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("#8b7355"));
+        ctx.set_fill_style_str("#8b7355");
         ctx.fill();
     }
 
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "csr")]
     fn draw_building_placeholder(&self, ctx: &CanvasRenderingContext2d, x: f64, y: f64, obj_type: &ObjectType) {
         let (width, height, color) = match obj_type {
             ObjectType::House => (40.0, 50.0, "#1a2e1a"),
@@ -179,7 +178,7 @@ impl MapRenderer {
             ObjectType::Lamp => return,
         };
         
-        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(color));
+        ctx.set_fill_style_str(color);
         ctx.fill_rect(x - width / 2.0, y - height, width, height);
         
         ctx.begin_path();
@@ -187,10 +186,10 @@ impl MapRenderer {
         ctx.line_to(x, y - height - 20.0);
         ctx.line_to(x + width / 2.0 + 5.0, y - height);
         ctx.close_path();
-        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("#660000"));
+        ctx.set_fill_style_str("#660000");
         ctx.fill();
         
-        ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("#0a0a0a"));
+        ctx.set_stroke_style_str("#0a0a0a");
         ctx.set_line_width(1.0);
         ctx.stroke_rect(x - width / 2.0, y - height, width, height);
     }
@@ -202,11 +201,11 @@ impl MapRenderer {
         
         let mut tiles = vec![vec![TileType::Grass; width]; height];
         
-        for i in 0..width {
-            tiles[height / 2][i] = TileType::Stone;
+        for tile in tiles[height / 2].iter_mut().take(width) {
+            *tile = TileType::Stone;
         }
-        for i in 0..height {
-            tiles[i][width / 2] = TileType::Stone;
+        for row in tiles.iter_mut().take(height) {
+            row[width / 2] = TileType::Stone;
         }
         
         tiles[2][7] = TileType::Water;

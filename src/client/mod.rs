@@ -1,6 +1,4 @@
+//! Client module - CSR components and game logic
+
 pub mod components;
-
-#[cfg(feature = "hydrate")]
 pub mod game;
-
-// Re-export specific client utils if needed

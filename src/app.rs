@@ -1,9 +1,11 @@
+//! App component - CSR Only
+
 use leptos::prelude::*;
 use leptos_meta::*;
 use leptos_router::*;
 use leptos_router::components::{Router, Route, Routes};
 
-use crate::game;
+use crate::client::game;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -17,9 +19,14 @@ pub fn App() -> impl IntoView {
         <Router>
             <main>
                 <Routes fallback=|| "Not Found">
-                    <Route path=path!("/") view=game::GameView/>
+                    <Route path=path!("/") view=GamePage/>
                 </Routes>
             </main>
         </Router>
     }
+}
+
+#[component]
+fn GamePage() -> impl IntoView {
+    view! { <game::GameView/> }
 }

@@ -1,4 +1,4 @@
-use leptos::prelude::*;
+// Client components
 
 pub mod hud;
 pub mod character_window;

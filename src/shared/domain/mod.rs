@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+// Domain modules
 
 pub mod character;
 pub mod player;
@@ -9,11 +9,13 @@ pub mod map;
 
 pub mod shared;
 
+// Re-export commonly used types
 pub use player::*;
-pub use monster::*;
-pub use item::*;
-pub use skill::*;
+pub use monster::{Monster, MonsterData, MonsterAIType};
+pub use item::models::{Item, ItemType, EquipmentSlot};
+pub use skill::models::Skill;
 pub use map::*;
 
 // Re-export shared models
 pub use shared::models::*;
+

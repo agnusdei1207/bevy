@@ -1,6 +1,6 @@
 FROM rust:1.85-bookworm
 
-# 시스템 패키지 설치 (clang: ring 크레이트 빌드 필요)
+# System packages (clang needed for ring crate)
 RUN apt update && apt install -y \
     pkg-config \
     libssl-dev \
@@ -9,16 +9,15 @@ RUN apt update && apt install -y \
     lld \
     && rm -rf /var/lib/apt/lists/*
 
-# Rust Nightly 설정 (Leptos 0.8 최적화)
+# Rust Nightly with WASM target
 RUN rustup default nightly
 RUN rustup target add wasm32-unknown-unknown
 
-# Rust 도구 설치
-RUN cargo install cargo-leptos --version 0.2.24 --locked
+# Install trunk (for CSR frontend) and sqlx-cli
+RUN cargo install trunk --locked
 RUN cargo install sqlx-cli --no-default-features --features postgres --locked
 
-# 작업 디렉토리
 WORKDIR /workspace
 
-# 기본 명령어
-CMD ["cargo", "leptos", "watch"]
+# Default command
+CMD ["trunk", "serve", "--address", "0.0.0.0"]

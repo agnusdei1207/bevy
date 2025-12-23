@@ -1,34 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
+<html lang="ko">
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Legend of Darkness M</title>
-    <link rel="stylesheet" href="/style/main.css" />
-    <link rel="manifest" href="/manifest.json" />
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-</head>
-
-<body>
-    <!-- Background Music -->
-    <audio id="bgm" loop>
-        <source src="/assets/bgm/village.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-
-    <script>
-        // Auto-play attempt on interaction
-        document.addEventListener('click', function () {
-            var bgm = document.getElementById('bgm');
-            if (bgm.paused) {
-                bgm.volume = 0.3;
-                bgm.play().catch(function (e) {
-                    console.log("Audio play failed: " + e);
-                });
-            }
-        }, { once: true });
-    </script>
-</body>
-
+    <title>어둠의전설 M - Legend of Darkness M</title>
+    <meta name="description" content="픽셀 RPG 온라인 게임" />
+    <link data-trunk rel="css" href="style/main.css" />
+    <link data-trunk rel="copy-dir" href="public/assets" />
+    <link data-trunk rel="rust" href="Cargo.toml" />
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
 </html>

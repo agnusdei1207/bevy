@@ -1,15 +1,17 @@
+//! Skill Window Component - CSR Version
+
 use leptos::prelude::*;
 use crate::shared::domain::skill::models::Skill;
 use crate::shared::domain::skill::server::get_skills;
 
 #[component]
 pub fn SkillWindow(
-    player_class: ReadSignal<String>, // Passed as signal or string? Dynamic means signal.
-    player_level: ReadSignal<i32>,
+    player_class: Signal<String>,
+    player_level: Signal<i32>,
     on_close: impl Fn(web_sys::MouseEvent) + 'static + Clone,
 ) -> impl IntoView {
-    // Resource to fetch skills
-    let skills_resource = Resource::new(
+    // Resource to fetch skills (CSR version - uses mock data or HTTP)
+    let skills_resource: Resource<Result<Vec<Skill>, String>> = Resource::new(
         move || (player_class.get(), player_level.get()),
         move |(class, level)| async move {
             get_skills(class, level).await
@@ -33,20 +35,23 @@ pub fn SkillWindow(
                     <div class="skill-grid-container">
                         <Suspense fallback=move || view! { <div class="loading">"스킬 불러오는 중..."</div> }>
                             {move || {
-                                skills_resource.get().map(|result| match result {
+                                skills_resource.get().map(|result: Result<Vec<Skill>, _>| match result {
                                     Ok(skills) => {
                                         if skills.is_empty() {
-                                            view! { <div class="empty-message">"배울 수 있는 스킬이 없습니다."</div> }.into_view()
+                                            view! { <div class="empty-message">"배울 수 있는 스킬이 없습니다."</div> }.into_any()
                                         } else {
                                             view! {
                                                 <div class="skill-grid">
                                                     {skills.into_iter().map(|skill| {
+                                                        let icon_path = skill.icon_path.clone();
+                                                        let skill_name = skill.name.clone();
                                                         view! {
                                                             <div class="skill-slot" title={skill.description.unwrap_or_default()}>
                                                                 <div class="skill-icon-wrapper">
-                                                                   {match skill.icon_path {
-                                                                       Some(path) => view! { <img src=path alt=skill.name class="skill-icon-img" /> }.into_view(),
-                                                                       None => view! { <div class="skill-icon-placeholder">"⚔️"</div> }.into_view()
+                                                                   {if let Some(path) = icon_path {
+                                                                       view! { <img src=path alt=skill_name class="skill-icon-img" /> }.into_any()
+                                                                   } else {
+                                                                       view! { <div class="skill-icon-placeholder">"⚔️"</div> }.into_any()
                                                                    }}
                                                                 </div>
                                                                 <div class="skill-details">
@@ -60,10 +65,10 @@ pub fn SkillWindow(
                                                         }
                                                     }).collect_view()}
                                                 </div>
-                                            }.into_view()
+                                            }.into_any()
                                         }
                                     },
-                                    Err(e) => view! { <div class="error-message">"오류 발생: " {e.to_string()}</div> }.into_view()
+                                    Err(e) => view! { <div class="error-message">"오류 발생: " {e}</div> }.into_any()
                                 })
                             }}
                         </Suspense>

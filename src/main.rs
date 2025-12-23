@@ -1,13 +1,25 @@
-#[cfg(feature = "ssr")]
+//! Legend API Server - Pure Axum REST API
+//!
+//! Build: cargo build --features ssr
+//! Run: cargo run --features ssr
+
+#[cfg(feature = "server")]
 #[tokio::main]
 async fn main() {
-    use axum::Router;
-    use legend::app::App;
-    use leptos::prelude::*;
-    use leptos_axum::{generate_route_list, LeptosRoutes};
+    use axum::{
+        routing::{get, post},
+        Router,
+        Json,
+        http::StatusCode,
+    };
+    use tower_http::cors::{CorsLayer, Any};
     use tower_http::services::ServeDir;
+    use tracing_subscriber;
     
-    // 데이터베이스 연결
+    // Initialize logging
+    tracing_subscriber::fmt::init();
+    
+    // Database connection
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://legend:legend@db:5432/legend".to_string());
     
@@ -17,10 +29,10 @@ async fn main() {
         .await
         .expect("Failed to connect to database");
     
-    // DB Pool 전역 초기화
+    // Initialize global DB pool
     legend::server::db::init_db(pool.clone());
     
-    // 마이그레이션 실행
+    // Run migrations
     sqlx::migrate!("./migrations")
         .run(&pool)
         .await
@@ -28,31 +40,39 @@ async fn main() {
     
     println!("✅ Database connected and migrated");
     
-    // Leptos 설정
-    let conf = get_configuration(None).unwrap();
-    let leptos_options = conf.leptos_options;
-    let addr = leptos_options.site_addr;
-    let routes = generate_route_list(App);
+    // CORS configuration
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
     
-    // 라우터
+    // API Router
+    let api_routes = Router::new()
+        .route("/health", get(health_check))
+        .route("/login", post(legend::server::auth::login_handler))
+        .route("/register", post(legend::server::auth::register_handler));
+    
+    // Main Router
     let app = Router::new()
-        .leptos_routes(&leptos_options, routes, {
-            let leptos_options = leptos_options.clone();
-            move || view! { <App/> }
-        })
-        .nest_service("/pkg", ServeDir::new("target/site/pkg"))
+        .nest("/api", api_routes)
         .nest_service("/assets", ServeDir::new("public/assets"))
-        .fallback(leptos_axum::file_and_error_handler(leptos_options.clone(), App))
-        .layer(axum::Extension(pool.clone()))
-        .with_state(leptos_options);
+        .layer(cors)
+        .layer(axum::Extension(pool));
     
-    println!("🎮 어둠의전설 M 서버 시작: http://{}", addr);
+    let addr = "0.0.0.0:3000";
+    println!("🎮 Legend API Server: http://{}", addr);
     
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app.into_make_service())
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
-#[cfg(not(feature = "ssr"))]
-pub fn main() {}
+#[cfg(feature = "server")]
+async fn health_check() -> &'static str {
+    "OK"
+}
+
+#[cfg(not(feature = "server"))]
+pub fn main() {
+    // This binary requires --features server
+    println!("Run with: cargo run --features server");
+}

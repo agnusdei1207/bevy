@@ -1,4 +1,4 @@
-use crate::models::*;
+// Combat utility functions
 
 pub fn calculate_damage(attacker_attack: i32, defender_defense: i32) -> i32 {
     let base_damage = attacker_attack - defender_defense / 2;
@@ -16,3 +16,4 @@ pub fn calculate_drop_gold(min: i32, max: i32) -> i32 {
     let mut rng = rand::thread_rng();
     rng.gen_range(min..=max)
 }
+

@@ -1,7 +1,9 @@
-use sqlx::PgPool;
-use once_cell::sync::OnceCell;
+#![cfg(feature = "server")]
 
-static DB_POOL: OnceCell<PgPool> = OnceCell::new();
+use sqlx::PgPool;
+use std::sync::OnceLock;
+
+static DB_POOL: OnceLock<PgPool> = OnceLock::new();
 
 pub fn init_db(pool: PgPool) {
     let _ = DB_POOL.set(pool);

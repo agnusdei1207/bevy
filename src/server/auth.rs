@@ -1,147 +1,227 @@
-use leptos::prelude::*;
+//! Authentication handlers - Axum REST API
+//!
+//! SSR feature only
+
+#[cfg(feature = "server")]
+use axum::{Json, Extension};
+#[cfg(feature = "server")]
+use sqlx::PgPool;
+
+use serde::{Deserialize, Serialize};
 use crate::shared::domain::player::Player;
 
-use leptos::prelude::*;
-use crate::shared::domain::player::Player;
+// Request/Response DTOs
+#[derive(Debug, Deserialize)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: String,
+}
 
-#[server(Login, "/api")]
-pub async fn login(username: String, password: String) -> Result<Option<Player>, ServerFnError> {
-    use crate::server::db::get_db_pool;
+#[derive(Debug, Serialize)]
+pub struct LoginResponse {
+    pub success: bool,
+    pub player: Option<Player>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RegisterRequest {
+    pub username: String,
+    pub password: String,
+    pub class_idx: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RegisterResponse {
+    pub success: bool,
+    pub message: String,
+}
+
+// --- SSR Handlers ---
+
+#[cfg(feature = "server")]
+pub async fn login_handler(
+    Extension(pool): Extension<PgPool>,
+    Json(req): Json<LoginRequest>,
+) -> Json<LoginResponse> {
     use bcrypt::verify;
-    
-    let pool = get_db_pool();
+    use sqlx::Row;
     
     // 1. Get User
-    let row = sqlx::query!("SELECT id, password_hash FROM users WHERE username = $1", username)
-        .fetch_optional(pool)
-        .await?;
-        
-    let user = match row {
+    let row: Option<(uuid::Uuid, String)> = sqlx::query_as(
+        "SELECT id, password_hash FROM users WHERE username = $1"
+    )
+    .bind(&req.username)
+    .fetch_optional(&pool)
+    .await
+    .unwrap_or(None);
+    
+    let (user_id, password_hash) = match row {
         Some(u) => u,
-        None => return Ok(None),
+        None => return Json(LoginResponse {
+            success: false,
+            player: None,
+            error: Some("User not found".to_string()),
+        }),
     };
     
     // 2. Verify Password
-    if !verify(&password, &user.password_hash).unwrap_or(false) {
-        return Ok(None);
+    if !verify(&req.password, &password_hash).unwrap_or(false) {
+        return Json(LoginResponse {
+            success: false,
+            player: None,
+            error: Some("Invalid password".to_string()),
+        });
     }
     
-    // 3. Get Character (Assuming single character for now for simplicity, or select first)
-    // We need to map DB columns to Player struct.
-    // This is complex because Player struct has nested Stats, etc.
-    // For now, let's fetch basic info and construct Player.
-    // Ideally we use sqlx::query_as! but types need to match strictly.
-    
-    // Let's implement a simplified fetch.
-    // Note: The schema for `characters` has basic fields. `character_stats` has detailed stats.
-    
-    let char_row = sqlx::query!(
+    // 3. Get Character
+    let char_row = sqlx::query(
         r#"
-        SELECT c.*, s.str, s.dex, s.con, s.int_stat, s.wis, s.stat_points_available
+        SELECT c.id, c.name, c.gender, c.class_id, c.level, c.exp, c.gold, c.map_id, c.x, c.y,
+               s.str, s.dex, s.con, s.int_stat, s.wis, s.stat_points_available
         FROM characters c
         LEFT JOIN character_stats s ON c.id = s.character_id
         WHERE c.user_id = $1
         LIMIT 1
-        "#,
-        user.id
+        "#
     )
-    .fetch_optional(pool)
-    .await?;
+    .bind(user_id)
+    .fetch_optional(&pool)
+    .await
+    .unwrap_or(None);
     
     if let Some(c) = char_row {
-        // Map to Player Model
-        // We need to convert String map/class to Enums.
-        let player_class = match c.class_id {
-            Some(1) => crate::shared::domain::character::models::PlayerClass::Warrior,
-            Some(2) => crate::shared::domain::character::models::PlayerClass::Rogue,
-            Some(3) => crate::shared::domain::character::models::PlayerClass::Mage,
-            Some(4) => crate::shared::domain::character::models::PlayerClass::Cleric,
-            Some(5) => crate::shared::domain::character::models::PlayerClass::MartialArtist,
-            _ => crate::shared::domain::character::models::PlayerClass::Warrior,
+        use crate::shared::domain::character::models::PlayerClass;
+        use crate::shared::domain::shared::models::{Stats, CombatStats, Position, Direction};
+        
+        let class_id: Option<i32> = c.get("class_id");
+        let player_class = match class_id {
+            Some(1) => PlayerClass::Warrior,
+            Some(2) => PlayerClass::Rogue,
+            Some(3) => PlayerClass::Mage,
+            Some(4) => PlayerClass::Cleric,
+            Some(5) => PlayerClass::MartialArtist,
+            _ => PlayerClass::Warrior,
         };
         
-        // Construct stats
-        let stats = crate::shared::domain::shared::models::Stats {
-            str: c.str.unwrap_or(10),
-            dex: c.dex.unwrap_or(10),
-            con: c.con.unwrap_or(10),
-            int: c.int_stat.unwrap_or(10), // int_stat column name
-            wis: c.wis.unwrap_or(10),
+        let stats = Stats {
+            str: c.try_get::<i32, _>("str").unwrap_or(10),
+            dex: c.try_get::<i32, _>("dex").unwrap_or(10),
+            con: c.try_get::<i32, _>("con").unwrap_or(10),
+            int: c.try_get::<i32, _>("int_stat").unwrap_or(10),
+            wis: c.try_get::<i32, _>("wis").unwrap_or(10),
         };
         
-        let combat_stats = crate::shared::domain::shared::models::CombatStats::from_stats(&stats, c.level.unwrap_or(1));
+        let level: i32 = c.try_get("level").unwrap_or(1);
+        let combat_stats = CombatStats::from_stats(&stats, level);
 
-        let p = Player {
-            id: c.id.to_string(),
-            username: c.name,
-            gender: c.gender,
+        let char_id: uuid::Uuid = c.get("id");
+        let player = Player {
+            id: char_id.to_string(),
+            username: c.get("name"),
+            gender: c.get("gender"),
             class: player_class,
-            level: c.level.unwrap_or(1),
-            exp: c.exp.unwrap_or(0),
-            exp_to_next_level: 100, // Calc logic needed
+            level,
+            exp: c.try_get("exp").unwrap_or(0),
+            exp_to_next_level: 100,
             stats,
-            stat_points: c.stat_points_available.unwrap_or(0),
+            stat_points: c.try_get("stat_points_available").unwrap_or(0),
             combat_stats,
-            equipment: std::collections::HashMap::new(), // Load from DB needed
-            inventory: vec![None; 24], // Load from DB needed
-            current_map: c.map_id,
-            position: crate::shared::domain::shared::models::Position { 
-                x: c.x.unwrap_or(400) as f64, 
-                y: c.y.unwrap_or(300) as f64 
+            equipment: std::collections::HashMap::new(),
+            inventory: vec![None; 24],
+            current_map: c.get("map_id"),
+            position: Position { 
+                x: c.try_get::<i32, _>("x").unwrap_or(400) as f64, 
+                y: c.try_get::<i32, _>("y").unwrap_or(300) as f64 
             },
-            direction: crate::shared::domain::shared::models::Direction::Down,
-            gold: c.gold.unwrap_or(0),
+            direction: Direction::Down,
+            gold: c.try_get("gold").unwrap_or(0),
             is_moving: false,
             is_attacking: false,
             target_monster_id: None,
+            last_attack_time: 0.0,
+            attack_cooldown: 1000.0,
         };
         
-        return Ok(Some(p));
+        return Json(LoginResponse {
+            success: true,
+            player: Some(player),
+            error: None,
+        });
     }
     
-    Ok(None)
+    Json(LoginResponse {
+        success: false,
+        player: None,
+        error: Some("Character not found".to_string()),
+    })
 }
 
-#[server(Register, "/api")]
-pub async fn register(username: String, password: String, class_idx: i32) -> Result<String, ServerFnError> {
-    use crate::server::db::get_db_pool;
+#[cfg(feature = "server")]
+pub async fn register_handler(
+    Extension(pool): Extension<PgPool>,
+    Json(req): Json<RegisterRequest>,
+) -> Json<RegisterResponse> {
     use bcrypt::{hash, DEFAULT_COST};
     use uuid::Uuid;
     
-    let pool = get_db_pool();
-    
     // Hash password
-    let hashed = hash(password, DEFAULT_COST).expect("Failed to hash");
+    let hashed = match hash(&req.password, DEFAULT_COST) {
+        Ok(h) => h,
+        Err(_) => return Json(RegisterResponse {
+            success: false,
+            message: "Failed to hash password".to_string(),
+        }),
+    };
     
     // Create User
     let user_id = Uuid::new_v4();
-    sqlx::query!(
-        "INSERT INTO users (id, username, password_hash) VALUES ($1, $2, $3)",
-        user_id, username, hashed
+    if let Err(e) = sqlx::query(
+        "INSERT INTO users (id, username, password_hash) VALUES ($1, $2, $3)"
     )
-    .execute(pool)
-    .await?;
+    .bind(user_id)
+    .bind(&req.username)
+    .bind(&hashed)
+    .execute(&pool)
+    .await {
+        return Json(RegisterResponse {
+            success: false,
+            message: format!("Failed to create user: {}", e),
+        });
+    }
     
-    // Create Character (Default)
+    // Create Character
     let char_id = Uuid::new_v4();
-    let class_id = class_idx; // 1..5
-    
-    // Basic stats based on class
-    // For simplicity, inserting default 10s. Normally depend on class.
-    
-    sqlx::query!(
-        "INSERT INTO characters (id, user_id, name, class_id, gender) VALUES ($1, $2, $3, $4, 'male')",
-        char_id, user_id, username, class_id
+    if let Err(e) = sqlx::query(
+        "INSERT INTO characters (id, user_id, name, class_id, gender) VALUES ($1, $2, $3, $4, 'male')"
     )
-    .execute(pool)
-    .await?;
+    .bind(char_id)
+    .bind(user_id)
+    .bind(&req.username)
+    .bind(req.class_idx)
+    .execute(&pool)
+    .await {
+        return Json(RegisterResponse {
+            success: false,
+            message: format!("Failed to create character: {}", e),
+        });
+    }
     
-    sqlx::query!(
-        "INSERT INTO character_stats (character_id, str, dex, con, int_stat, wis) VALUES ($1, 10, 10, 10, 10, 10)",
-        char_id
+    // Create Stats
+    if let Err(e) = sqlx::query(
+        "INSERT INTO character_stats (character_id, str, dex, con, int_stat, wis) VALUES ($1, 10, 10, 10, 10, 10)"
     )
-    .execute(pool)
-    .await?;
+    .bind(char_id)
+    .execute(&pool)
+    .await {
+        return Json(RegisterResponse {
+            success: false,
+            message: format!("Failed to create stats: {}", e),
+        });
+    }
     
-    Ok("Success".to_string())
+    Json(RegisterResponse {
+        success: true,
+        message: "Registration successful".to_string(),
+    })
 }

@@ -1,10 +1,10 @@
 //! 오디오 시스템 - BGM 및 효과음 관리
 //! 
-//! hydrate feature가 활성화된 경우에만 실제 오디오를 재생합니다.
+//! CSR 모드에서만 실제 오디오를 재생합니다.
 
-#[cfg(feature = "hydrate")]
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
-#[cfg(feature = "hydrate")]
+#[cfg(target_arch = "wasm32")]
 use web_sys::HtmlAudioElement;
 
 use std::collections::HashMap;
@@ -13,14 +13,16 @@ use std::rc::Rc;
 
 /// 오디오 관리자 - BGM과 SFX를 관리
 pub struct AudioManager {
-    #[cfg(feature = "hydrate")]
+    #[cfg(target_arch = "wasm32")]
     bgm_player: Option<HtmlAudioElement>,
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(target_arch = "wasm32"))]
+    #[allow(dead_code)]
     bgm_player: Option<()>,
     
-    #[cfg(feature = "hydrate")]
+    #[cfg(target_arch = "wasm32")]
     sfx_cache: Rc<RefCell<HashMap<String, HtmlAudioElement>>>,
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(target_arch = "wasm32"))]
+    #[allow(dead_code)]
     sfx_cache: Rc<RefCell<HashMap<String, ()>>>,
     
     bgm_volume: f64,
@@ -40,7 +42,7 @@ impl AudioManager {
     }
 
     /// BGM 재생
-    #[cfg(feature = "hydrate")]
+    #[cfg(target_arch = "wasm32")]
     pub fn play_bgm(&mut self, path: &str) {
         // 이전 BGM 정지
         if let Some(ref player) = self.bgm_player {
@@ -49,19 +51,19 @@ impl AudioManager {
 
         if let Ok(audio) = HtmlAudioElement::new_with_src(path) {
             audio.set_loop(true);
-            let _ = audio.set_volume(if self.is_muted { 0.0 } else { self.bgm_volume });
+            audio.set_volume(if self.is_muted { 0.0 } else { self.bgm_volume });
             let _ = audio.play();
             self.bgm_player = Some(audio);
         }
     }
 
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn play_bgm(&mut self, _path: &str) {
         // SSR에서는 아무것도 하지 않음
     }
 
     /// BGM 정지
-    #[cfg(feature = "hydrate")]
+    #[cfg(target_arch = "wasm32")]
     pub fn stop_bgm(&mut self) {
         if let Some(ref player) = self.bgm_player {
             let _ = player.pause();
@@ -69,33 +71,33 @@ impl AudioManager {
         }
     }
 
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn stop_bgm(&mut self) {}
 
     /// BGM 일시정지
-    #[cfg(feature = "hydrate")]
+    #[cfg(target_arch = "wasm32")]
     pub fn pause_bgm(&self) {
         if let Some(ref player) = self.bgm_player {
             let _ = player.pause();
         }
     }
 
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn pause_bgm(&self) {}
 
     /// BGM 재개
-    #[cfg(feature = "hydrate")]
+    #[cfg(target_arch = "wasm32")]
     pub fn resume_bgm(&self) {
         if let Some(ref player) = self.bgm_player {
             let _ = player.play();
         }
     }
 
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn resume_bgm(&self) {}
 
     /// 효과음 재생
-    #[cfg(feature = "hydrate")]
+    #[cfg(target_arch = "wasm32")]
     pub fn play_sfx(&self, path: &str) {
         if self.is_muted {
             return;
@@ -105,31 +107,31 @@ impl AudioManager {
         
         if let Some(audio) = cache.get(path) {
             // 이미 재생 중이면 복제본 사용
-            if let Ok(cloned) = audio.clone_node() {
-                if let Ok(audio_clone) = cloned.dyn_into::<HtmlAudioElement>() {
-                    let _ = audio_clone.set_volume(self.sfx_volume);
-                    let _ = audio_clone.play();
-                }
+            if let Ok(audio_clone) = audio.clone_node().and_then(|c| {
+                c.dyn_into::<HtmlAudioElement>().map_err(JsValue::from)
+            }) {
+                audio_clone.set_volume(self.sfx_volume);
+                let _ = audio_clone.play();
             }
         } else {
             // 새로 로드
             if let Ok(audio) = HtmlAudioElement::new_with_src(path) {
-                let _ = audio.set_volume(self.sfx_volume);
+                audio.set_volume(self.sfx_volume);
                 let _ = audio.play();
                 cache.insert(path.to_string(), audio);
             }
         }
     }
 
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn play_sfx(&self, _path: &str) {}
 
     /// BGM 볼륨 설정 (0.0 - 1.0)
     pub fn set_bgm_volume(&mut self, volume: f64) {
         self.bgm_volume = volume.clamp(0.0, 1.0);
-        #[cfg(feature = "hydrate")]
+        #[cfg(target_arch = "wasm32")]
         if let Some(ref player) = self.bgm_player {
-            let _ = player.set_volume(if self.is_muted { 0.0 } else { self.bgm_volume });
+            player.set_volume(if self.is_muted { 0.0 } else { self.bgm_volume });
         }
     }
 
@@ -141,9 +143,9 @@ impl AudioManager {
     /// 음소거 토글
     pub fn toggle_mute(&mut self) -> bool {
         self.is_muted = !self.is_muted;
-        #[cfg(feature = "hydrate")]
+        #[cfg(target_arch = "wasm32")]
         if let Some(ref player) = self.bgm_player {
-            let _ = player.set_volume(if self.is_muted { 0.0 } else { self.bgm_volume });
+            player.set_volume(if self.is_muted { 0.0 } else { self.bgm_volume });
         }
         self.is_muted
     }

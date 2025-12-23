@@ -1,4 +1,4 @@
-use crate::models::*;
+use crate::shared::domain::*;
 
 pub fn move_towards(from: &Position, to: &Position, speed: f64, delta_time: f64) -> Position {
     let dx = to.x - from.x;
@@ -15,3 +15,4 @@ pub fn move_towards(from: &Position, to: &Position, speed: f64, delta_time: f64)
         }
     }
 }
+

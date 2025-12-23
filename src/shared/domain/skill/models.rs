@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use leptos::prelude::*;
+
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+#[cfg_attr(feature = "server", derive(sqlx::FromRow))]
 pub struct Skill {
     pub id: i32,
     pub name: String,

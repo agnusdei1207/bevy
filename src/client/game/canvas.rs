@@ -3,10 +3,11 @@
 //! 90년대 RPG 스타일의 아이소메트릭 2.5D 렌더링
 //! 모든 엔티티는 1타일만 차지 (시각적 크기 무관)
 //!
-//! hydrate feature가 활성화된 경우에만 컴파일
+//! CSR 모드에서만 활성화됩니다.
 
-#![cfg(feature = "hydrate")]
+#![cfg(feature = "csr")]
 
+use send_wrapper::SendWrapper;
 use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -17,6 +18,7 @@ use crate::client::game::systems::{
     character_path, monster_path, tileset_path, buildings_path, decorations_path
 };
 use std::collections::HashSet;
+use std::rc::Rc;
 
 const CANVAS_WIDTH: f64 = 800.0;
 const CANVAS_HEIGHT: f64 = 600.0;
@@ -39,15 +41,15 @@ pub fn GameCanvas(
     let canvas_ref = NodeRef::<leptos::html::Canvas>::new();
     
     // 스프라이트시트 로딩
-    let (tileset, set_tileset) = signal(None::<web_sys::HtmlImageElement>);
-    let (buildings, set_buildings) = signal(None::<web_sys::HtmlImageElement>);
-    let (decorations, set_decorations) = signal(None::<web_sys::HtmlImageElement>);
-    let (player_sheet, set_player_sheet) = signal(None::<web_sys::HtmlImageElement>);
-    let (monster_sheets, set_monster_sheets) = signal(std::collections::HashMap::<String, web_sys::HtmlImageElement>::new());
+    let (tileset, set_tileset) = signal(None::<SendWrapper<web_sys::HtmlImageElement>>);
+    let (buildings, set_buildings) = signal(None::<SendWrapper<web_sys::HtmlImageElement>>);
+    let (decorations, set_decorations) = signal(None::<SendWrapper<web_sys::HtmlImageElement>>);
+    let (player_sheet, set_player_sheet) = signal(None::<SendWrapper<web_sys::HtmlImageElement>>);
+    let (monster_sheets, set_monster_sheets) = signal(std::collections::HashMap::<String, SendWrapper<web_sys::HtmlImageElement>>::new());
     
     // Map System
-    let map_data = crate::client::game::systems::MapRenderer::create_mock_map();
-    let map_renderer = crate::client::game::systems::MapRenderer::new(CANVAS_WIDTH, CANVAS_HEIGHT);
+    let map_data = Rc::new(crate::client::game::systems::MapRenderer::create_mock_map());
+    let map_renderer = Rc::new(crate::client::game::systems::MapRenderer::new(CANVAS_WIDTH, CANVAS_HEIGHT));
     
     // 타일셋 로딩
     Effect::new(move |_| {
@@ -78,11 +80,11 @@ pub fn GameCanvas(
         
         for monster in current_monsters.iter() {
             let monster_type = get_monster_type(&monster.name);
-            if !sheets.contains_key(&monster_type) {
+            if let std::collections::hash_map::Entry::Vacant(e) = sheets.entry(monster_type.clone()) {
                 let path = monster_path(&monster_type);
                 if let Ok(img) = web_sys::HtmlImageElement::new() {
                     img.set_src(&path);
-                    sheets.insert(monster_type, img);
+                    e.insert(SendWrapper::new(img));
                 }
             }
         }
@@ -104,6 +106,9 @@ pub fn GameCanvas(
             let f = std::rc::Rc::new(std::cell::RefCell::new(None::<Closure<dyn FnMut()>>));
             let g = f.clone();
             let mut last_time = js_sys::Date::now();
+            
+            let map_renderer = map_renderer.clone();
+            let map_data = map_data.clone();
             
             *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
                 let current_time = js_sys::Date::now();
@@ -140,20 +145,27 @@ pub fn GameCanvas(
                         p.is_attacking = false;
                     }
                     
-                    new_x = new_x.max(32.0).min(CANVAS_WIDTH - 32.0);
-                    new_y = new_y.max(32.0).min(CANVAS_HEIGHT - 32.0);
+                    new_x = new_x.clamp(32.0, CANVAS_WIDTH - 32.0);
+                    new_y = new_y.clamp(32.0, CANVAS_HEIGHT - 32.0);
                     
                     p.position.x = new_x;
                     p.position.y = new_y;
                     p.is_moving = moved;
                     set_player.set(p);
                     
-                    render_game(
-                        &ctx, current_time, player.get(), monsters.get(),
-                        &player_sheet.get(), &monster_sheets.get(),
-                        &tileset.get(), &buildings.get(), &decorations.get(),
-                        &map_renderer, &map_data
-                    );
+                    render_game(RenderContext {
+                        ctx: &ctx,
+                        current_time,
+                        player: player.get(),
+                        monsters: monsters.get(),
+                        player_sheet: &player_sheet.get(),
+                        monster_sheets: &monster_sheets.get(),
+                        tileset: &tileset.get(),
+                        buildings: &buildings.get(),
+                        decorations: &decorations.get(),
+                        map_renderer: &map_renderer,
+                        map_data: &map_data,
+                    });
                 }
                 request_animation_frame(f.borrow().as_ref().unwrap());
             }) as Box<dyn FnMut()>));
@@ -171,12 +183,12 @@ pub fn GameCanvas(
     }
 }
 
-fn load_image(path: String, setter: WriteSignal<Option<web_sys::HtmlImageElement>>) {
+fn load_image(path: String, setter: WriteSignal<Option<SendWrapper<web_sys::HtmlImageElement>>>) {
     if let Ok(img) = web_sys::HtmlImageElement::new() {
         img.set_src(&path);
         let img_clone = img.clone();
         let onload = Closure::wrap(Box::new(move || {
-            setter.set(Some(img_clone.clone()));
+            setter.set(Some(SendWrapper::new(img_clone.clone())));
         }) as Box<dyn FnMut()>);
         img.set_onload(Some(onload.as_ref().unchecked_ref()));
         onload.forget();
@@ -197,32 +209,35 @@ fn get_monster_type(name: &str) -> String {
     }.to_string()
 }
 
-fn render_game(
-    ctx: &CanvasRenderingContext2d,
-    current_time: f64,
-    player: Player,
-    monsters: Vec<Monster>,
-    player_sheet: &Option<web_sys::HtmlImageElement>,
-    monster_sheets: &std::collections::HashMap<String, web_sys::HtmlImageElement>,
-    tileset: &Option<web_sys::HtmlImageElement>,
-    buildings: &Option<web_sys::HtmlImageElement>,
-    decorations: &Option<web_sys::HtmlImageElement>,
-    map_renderer: &crate::client::game::systems::MapRenderer,
-    map_data: &crate::shared::domain::map::MapData
-) {
+pub struct RenderContext<'a> {
+    pub ctx: &'a CanvasRenderingContext2d,
+    pub current_time: f64,
+    pub player: Player,
+    pub monsters: Vec<Monster>,
+    pub player_sheet: &'a Option<SendWrapper<web_sys::HtmlImageElement>>,
+    pub monster_sheets: &'a std::collections::HashMap<String, SendWrapper<web_sys::HtmlImageElement>>,
+    pub tileset: &'a Option<SendWrapper<web_sys::HtmlImageElement>>,
+    pub buildings: &'a Option<SendWrapper<web_sys::HtmlImageElement>>,
+    pub decorations: &'a Option<SendWrapper<web_sys::HtmlImageElement>>,
+    pub map_renderer: &'a crate::client::game::systems::MapRenderer,
+    pub map_data: &'a crate::shared::domain::map::MapData,
+}
+
+fn render_game(cx: RenderContext) {
+    let ctx = cx.ctx;
     // 배경
-    ctx.set_fill_style(&JsValue::from_str(COLOR_BACKGROUND));
+    ctx.set_fill_style_str(COLOR_BACKGROUND);
     ctx.fill_rect(0.0, 0.0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
     // 맵 렌더링
-    map_renderer.render(ctx, map_data, tileset, buildings, decorations);
+    cx.map_renderer.render(ctx, cx.map_data, cx.tileset.as_ref().map(|w| &**w), cx.buildings.as_ref().map(|w| &**w), cx.decorations.as_ref().map(|w| &**w));
     
     // 엔티티 정렬
     enum Entity<'a> { Player(&'a Player), Monster(&'a Monster) }
     
     let mut entities: Vec<Entity> = Vec::new();
-    entities.push(Entity::Player(&player));
-    for m in &monsters { entities.push(Entity::Monster(m)); }
+    entities.push(Entity::Player(&cx.player));
+    for m in &cx.monsters { entities.push(Entity::Monster(m)); }
     
     entities.sort_by(|a, b| {
         let (ax, ay) = match a { Entity::Player(p) => (p.position.x, p.position.y), Entity::Monster(m) => (m.position.x, m.position.y) };
@@ -232,16 +247,16 @@ fn render_game(
     
     for entity in entities {
         match entity {
-            Entity::Player(p) => draw_player_spritesheet(ctx, current_time, p, player_sheet),
+            Entity::Player(p) => draw_player_spritesheet(ctx, cx.current_time, p, cx.player_sheet.as_ref().map(|w| &**w)),
             Entity::Monster(m) => {
                 let monster_type = get_monster_type(&m.name);
-                draw_monster_spritesheet(ctx, current_time, m, monster_sheets.get(&monster_type));
+                draw_monster_spritesheet(ctx, cx.current_time, m, cx.monster_sheets.get(&monster_type).map(|w| &**w));
             }
         }
     }
 }
 
-fn draw_player_spritesheet(ctx: &CanvasRenderingContext2d, current_time: f64, player: &Player, sheet: &Option<web_sys::HtmlImageElement>) {
+fn draw_player_spritesheet(ctx: &CanvasRenderingContext2d, current_time: f64, player: &Player, sheet: Option<&web_sys::HtmlImageElement>) {
     let info = SpriteSheetInfo::character();
     
     let state = if player.is_attacking { AnimationState::Attack }
@@ -265,7 +280,7 @@ fn draw_player_spritesheet(ctx: &CanvasRenderingContext2d, current_time: f64, pl
         draw_placeholder(ctx, player.position.x, player.position.y, "#660000", 16.0);
     }
     
-    ctx.set_fill_style(&JsValue::from_str(COLOR_TEXT_PLAYER));
+    ctx.set_fill_style_str(COLOR_TEXT_PLAYER);
     ctx.set_font("10px 'Press Start 2P', monospace");
     ctx.set_text_align("center");
     let _ = ctx.fill_text(&player.username, player.position.x, draw_y - 5.0);
@@ -298,7 +313,7 @@ fn draw_monster_spritesheet(ctx: &CanvasRenderingContext2d, current_time: f64, m
         draw_placeholder(ctx, monster.position.x, monster.position.y, "#2d4a22", 12.0);
     }
     
-    ctx.set_fill_style(&JsValue::from_str(COLOR_TEXT_MONSTER));
+    ctx.set_fill_style_str(COLOR_TEXT_MONSTER);
     ctx.set_font("8px 'Press Start 2P', monospace");
     ctx.set_text_align("center");
     let _ = ctx.fill_text(&monster.name, monster.position.x, draw_y - 5.0);
@@ -306,9 +321,9 @@ fn draw_monster_spritesheet(ctx: &CanvasRenderingContext2d, current_time: f64, m
 }
 
 fn draw_placeholder(ctx: &CanvasRenderingContext2d, x: f64, y: f64, color: &str, size: f64) {
-    ctx.set_fill_style(&JsValue::from_str(color));
+    ctx.set_fill_style_str(color);
     ctx.fill_rect(x - size / 2.0, y - size / 2.0, size, size);
-    ctx.set_stroke_style(&JsValue::from_str("#1a1a2e"));
+    ctx.set_stroke_style_str("#1a1a2e");
     ctx.set_line_width(1.0);
     ctx.stroke_rect(x - size / 2.0, y - size / 2.0, size, size);
 }
@@ -318,14 +333,14 @@ fn draw_hp_bar(ctx: &CanvasRenderingContext2d, x: f64, y: f64, hp: i32, max_hp: 
     let bar_height = 4.0;
     let hp_ratio = hp as f64 / max_hp as f64;
     
-    ctx.set_fill_style(&JsValue::from_str("#0a0a0a"));
+    ctx.set_fill_style_str("#0a0a0a");
     ctx.fill_rect(x - bar_width / 2.0, y, bar_width, bar_height);
     
     let hp_color = if hp_ratio > 0.5 { COLOR_HP_HIGH } else if hp_ratio > 0.25 { COLOR_HP_MED } else { COLOR_HP_LOW };
-    ctx.set_fill_style(&JsValue::from_str(hp_color));
+    ctx.set_fill_style_str(hp_color);
     ctx.fill_rect(x - bar_width / 2.0, y, bar_width * hp_ratio, bar_height);
     
-    ctx.set_stroke_style(&JsValue::from_str("#1a1a2e"));
+    ctx.set_stroke_style_str("#1a1a2e");
     ctx.set_line_width(0.5);
     ctx.stroke_rect(x - bar_width / 2.0, y, bar_width, bar_height);
 }

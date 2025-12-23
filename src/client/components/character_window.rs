@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::models::*;
+use crate::shared::domain::*;
 
 #[component]
 pub fn CharacterWindow(
@@ -8,19 +8,19 @@ pub fn CharacterWindow(
     on_close: impl Fn(web_sys::MouseEvent) + 'static,
 ) -> impl IntoView {
     let add_str = move |_| {
-        set_player.update(|p: &mut Player| p.add_stat(StatType::Strength, 1));
+        set_player.update(|p: &mut Player| p.add_stat(StatType::Str, 1));
     };
     let add_dex = move |_| {
-        set_player.update(|p: &mut Player| p.add_stat(StatType::Dexterity, 1));
+        set_player.update(|p: &mut Player| p.add_stat(StatType::Dex, 1));
     };
     let add_int = move |_| {
-        set_player.update(|p: &mut Player| p.add_stat(StatType::Intelligence, 1));
+        set_player.update(|p: &mut Player| p.add_stat(StatType::Int, 1));
     };
-    let add_vit = move |_| {
-        set_player.update(|p: &mut Player| p.add_stat(StatType::Vitality, 1));
+    let add_con = move |_| {
+        set_player.update(|p: &mut Player| p.add_stat(StatType::Con, 1));
     };
-    let add_luk = move |_| {
-        set_player.update(|p: &mut Player| p.add_stat(StatType::Luck, 1));
+    let add_wis = move |_| {
+        set_player.update(|p: &mut Player| p.add_stat(StatType::Wis, 1));
     };
     
     view! {
@@ -37,28 +37,28 @@ pub fn CharacterWindow(
                         <div class="stat-list">
                             <div class="stat-item">
                                 <span>"힘 (STR)"</span>
-                                <span>{move || player.get().stats.strength}</span>
+                                <span>{move || player.get().stats.str}</span>
                                 <button on:click=add_str>"+"</button>
                             </div>
                             <div class="stat-item">
                                 <span>"민첩 (DEX)"</span>
-                                <span>{move || player.get().stats.dexterity}</span>
+                                <span>{move || player.get().stats.dex}</span>
                                 <button on:click=add_dex>"+"</button>
                             </div>
                             <div class="stat-item">
                                 <span>"지능 (INT)"</span>
-                                <span>{move || player.get().stats.intelligence}</span>
+                                <span>{move || player.get().stats.int}</span>
                                 <button on:click=add_int>"+"</button>
                             </div>
                             <div class="stat-item">
-                                <span>"체력 (VIT)"</span>
-                                <span>{move || player.get().stats.vitality}</span>
-                                <button on:click=add_vit>"+"</button>
+                                <span>"체력 (CON)"</span>
+                                <span>{move || player.get().stats.con}</span>
+                                <button on:click=add_con>"+"</button>
                             </div>
                             <div class="stat-item">
-                                <span>"행운 (LUK)"</span>
-                                <span>{move || player.get().stats.luck}</span>
-                                <button on:click=add_luk>"+"</button>
+                                <span>"지혜 (WIS)"</span>
+                                <span>{move || player.get().stats.wis}</span>
+                                <button on:click=add_wis>"+"</button>
                             </div>
                         </div>
                         <div class="stat-points">
@@ -99,3 +99,4 @@ pub fn CharacterWindow(
         </div>
     }
 }
+

@@ -10,9 +10,9 @@
 //! Row 3: DEATH  (4 프레임)
 //! ```
 
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "csr")]
 use web_sys::HtmlImageElement;
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "csr")]
 use wasm_bindgen::prelude::*;
 
 use std::collections::HashMap;
@@ -137,7 +137,7 @@ impl SpriteSheetInfo {
 }
 
 /// 캐싱 된 스프라이트시트 (hydrate only)
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "csr")]
 pub struct CachedSpriteSheet {
     pub image: HtmlImageElement,
     pub info: SpriteSheetInfo,
@@ -145,12 +145,12 @@ pub struct CachedSpriteSheet {
 }
 
 /// 스프라이트 로더 - 스프라이트시트 캐싱 및 관리
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "csr")]
 pub struct SpriteLoader {
     cache: Rc<RefCell<HashMap<String, CachedSpriteSheet>>>,
 }
 
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "csr")]
 impl SpriteLoader {
     pub fn new() -> Self {
         Self {
@@ -210,7 +210,7 @@ impl SpriteLoader {
     }
 }
 
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "csr")]
 impl Default for SpriteLoader {
     fn default() -> Self {
         Self::new()

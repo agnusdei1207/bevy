@@ -2,11 +2,11 @@
 //!
 //! hydrate feature가 활성화된 경우에만 컴파일
 
-#![cfg(feature = "hydrate")]
+
 
 use leptos::prelude::*;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
+use leptos::ev;
+
 use crate::shared::domain::*;
 
 mod canvas;
@@ -96,38 +96,19 @@ pub fn GameView() -> impl IntoView {
         ];
         set_monsters.set(initial_monsters);
         
-        // 전역 키보드 이벤트 설정
-        if let Some(window) = web_sys::window() {
-            if let Some(document) = window.document() {
-                let set_keys_down = set_keys_pressed;
-                let keydown_handler = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
-                    let key = e.key();
-                    set_keys_down.update(|keys| {
-                        keys.insert(key);
-                    });
-                }) as Box<dyn FnMut(_)>);
-                
-                let _ = document.add_event_listener_with_callback(
-                    "keydown",
-                    keydown_handler.as_ref().unchecked_ref()
-                );
-                keydown_handler.forget();
-                
-                let set_keys_up = set_keys_pressed;
-                let keyup_handler = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
-                    let key = e.key();
-                    set_keys_up.update(|keys| {
-                        keys.remove(&key);
-                    });
-                }) as Box<dyn FnMut(_)>);
-                
-                let _ = document.add_event_listener_with_callback(
-                    "keyup",
-                    keyup_handler.as_ref().unchecked_ref()
-                );
-                keyup_handler.forget();
-            }
-        }
+        window_event_listener(ev::keydown, move |e: web_sys::KeyboardEvent| {
+            let key = e.key();
+            set_keys_pressed.update(|keys| {
+                keys.insert(key);
+            });
+        });
+        
+        window_event_listener(ev::keyup, move |e: web_sys::KeyboardEvent| {
+            let key = e.key();
+            set_keys_pressed.update(|keys| {
+                keys.remove(&key);
+            });
+        });
     });
 
     view! {

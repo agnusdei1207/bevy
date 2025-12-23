@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::models::*;
+use crate::shared::domain::*;
 
 #[component]
 pub fn HUD(
@@ -15,9 +15,10 @@ pub fn HUD(
                     <div class="player-avatar" style=move || {
                         let color = match player.get().class {
                             PlayerClass::Warrior => "#ff4444",
-                            PlayerClass::Archer => "#44ff44",
+                            PlayerClass::Rogue => "#44ff44",
                             PlayerClass::Mage => "#4444ff",
-                            PlayerClass::Rogue => "#ff44ff",
+                            PlayerClass::Cleric => "#ff44ff",
+                            PlayerClass::MartialArtist => "#ffff44",
                         };
                         format!("background-color: {}", color)
                     }></div>
@@ -87,3 +88,4 @@ pub fn HUD(
         </div>
     }
 }
+
