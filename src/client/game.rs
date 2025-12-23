@@ -33,60 +33,59 @@ const MP_BAR_FG: Color = Color::srgb(0.1, 0.3, 0.8);
 pub fn spawn_game_world(
     mut commands: Commands,
     _asset_server: Res<AssetServer>,
-    i18n: Res<I18nResource>,
     assets: Res<GameAssets>,
     monster_defs: Res<MonsterDefinitions>,
 ) {
-    // ... existing tile spawning ...
+    // =============================================
+    // Spawn Tiles using tile atlas or fallback colors
+    // =============================================
     
-    // Millres Layout (16x16)
-    let layout = [
-        "GGGGGGSSSSGGGGGG", // 0
-        "GGWWGSSSSGGWWWGG", // 1
-        "GGDWGSSSSGWDDWGG", // 2
-        "GGGGGGSSSSGGGGGG", // 3
-        "SSSSSSSSSSSSSSSS", // 4
-        "SSSSSFFFSSSSSSSS", // 5
-        "SSSSSFFFSSSSSSSS", // 6
-        "SSSSSFFFSSSSSSSS", // 7
-        "SSSSSSSSSSSSSSSS", // 8
-        "GGGGGGSSSSGGGGGG", // 9
-        "GWWGGSSSSGGWWWWG", // 10
-        "GWDDGSSSSGWWDDWG", // 11
-        "GGGGGGSSSSGGGGGG", // 12
-        "GGGGGGSSSSGGGGGG", // 13
-        "GGGGGGSSSSGGGGGG", // 14
-        "GGGGGGSSSSGGGGGG", // 15
-    ];
-
-    for (y, row) in layout.iter().enumerate() {
+    // Millres Layout (16x16) from data module
+    use crate::shared::data::maps::MILLES_LAYOUT;
+    
+    for (y, row) in MILLES_LAYOUT.iter().enumerate() {
         for (x, char) in row.chars().enumerate() {
             let tile_type = match char {
                 'G' => TileType::Grass,
                 'S' => TileType::Stone,
                 'F' => TileType::Fountain,
-                'W' => TileType::Wall,
+                'W' | 'X' => TileType::Wall,
                 'D' => TileType::Door,
+                'B' => TileType::Wall, // Building
+                'T' => TileType::Wall, // Tree (non-walkable)
                 _ => TileType::Grass,
             };
 
+            // Use texture if available, otherwise fallback to colors
             let color = match tile_type {
-                TileType::Grass => Color::srgb(0.12, 0.18, 0.12), // Deep murky green
-                TileType::Stone => Color::srgb(0.22, 0.22, 0.24), // Cold grey stone
-                TileType::Fountain => Color::srgb(0.25, 0.35, 0.45), // Dark mystical water
-                TileType::Wall => Color::srgb(0.18, 0.15, 0.12), // Ancient dark wood/stone
-                TileType::Door => Color::srgb(0.3, 0.15, 0.08), // Dark mahogany
+                TileType::Grass => Color::srgb(0.15, 0.22, 0.12),    // Dark forest green
+                TileType::Stone => Color::srgb(0.25, 0.25, 0.28),    // Cold grey cobblestone
+                TileType::Fountain => Color::srgb(0.2, 0.3, 0.4),    // Dark mystical water
+                TileType::Wall => Color::srgb(0.2, 0.18, 0.15),      // Ancient dark stone
+                TileType::Door => Color::srgb(0.35, 0.2, 0.1),       // Dark wood door
             };
 
             let iso_pos = project_iso(x as f32, y as f32);
             
-            commands.spawn((
+            // Try to use tile texture, fallback to colored sprite
+            let sprite = if let Some(ref _tile_atlas) = assets.tile_atlas {
+                // TODO: Use texture atlas with proper UV coordinates when atlas layout is defined
                 Sprite {
                     color,
                     custom_size: Some(Vec2::new(ISO_CHART_WIDTH, ISO_CHART_HEIGHT)),
                     ..default()
-                },
-                Transform::from_xyz(iso_pos.x, iso_pos.y, -iso_pos.y / 1000.0), // Y-Sorting base
+                }
+            } else {
+                Sprite {
+                    color,
+                    custom_size: Some(Vec2::new(ISO_CHART_WIDTH, ISO_CHART_HEIGHT)),
+                    ..default()
+                }
+            };
+            
+            commands.spawn((
+                sprite,
+                Transform::from_xyz(iso_pos.x, iso_pos.y, -iso_pos.y / 1000.0),
                 TileComponent { tile_type },
                 GridPosition { x: x as i32, y: y as i32 },
             ));
@@ -95,13 +94,25 @@ pub fn spawn_game_world(
 
     let spawn_pos = project_iso(8.0, 8.0);
 
-    // Spawn player
-    commands.spawn((
+    // =============================================  
+    // Spawn Player with sprite or fallback color
+    // =============================================
+    let player_sprite = if let Some(sprite_handle) = assets.get_character_sprite("warrior", "male") {
+        Sprite {
+            image: sprite_handle,
+            custom_size: Some(Vec2::new(48.0, 64.0)),
+            ..default()
+        }
+    } else {
         Sprite {
             color: PLAYER_COLOR,
             custom_size: Some(Vec2::new(32.0, 48.0)),
             ..default()
-        },
+        }
+    };
+    
+    commands.spawn((
+        player_sprite,
         Transform::from_xyz(spawn_pos.x, spawn_pos.y, 10.0),
         PlayerComponent,
         Player::new("Player".to_string(), PlayerClass::Warrior),
@@ -118,7 +129,9 @@ pub fn spawn_game_world(
         CameraTarget,
     ));
     
-    // Spawn some monsters (Using names from DB)
+    // =============================================
+    // Spawn Monsters with sprites
+    // =============================================
     let monster_positions = vec![
         (3, 3, "Giant Rat"),
         (3, 13, "Vampire Bat"),
@@ -127,15 +140,21 @@ pub fn spawn_game_world(
     ];
     
     for (x, y, name) in monster_positions {
-        spawn_monster(&mut commands, x, y, name, &i18n, &monster_defs);
+        spawn_monster(&mut commands, x, y, name, &monster_defs, &assets);
     }
     
-    // Spawn NPCs (Shopkeeper and Innkeeper)
-    spawn_npc(&mut commands, 2, 2, &i18n.t("ui.innkeeper"), InteractionType::NpcChat(i18n.t("ui.innkeeper_msg")));
-    spawn_npc(&mut commands, 12, 11, &i18n.t("ui.shopkeeper"), InteractionType::NpcChat(i18n.t("ui.shopkeeper_msg")));
+    // =============================================
+    // Spawn NPCs
+    // =============================================
+    spawn_npc(&mut commands, 2, 2, "Innkeeper", InteractionType::NpcChat("Welcome! Rest here to recover.".to_string()));
+    spawn_npc(&mut commands, 12, 11, "Shopkeeper", InteractionType::NpcChat("Buy and sell items.".to_string()));
 
+    // =============================================
     // Spawn HUD
+    // =============================================
     spawn_hud(&mut commands, assets.ui_font.clone());
+    
+    println!("🗺️ Game world spawned with {} tiles", MILLES_LAYOUT.len() * 16);
 }
 
 fn spawn_npc(commands: &mut Commands, x: i32, y: i32, name: &str, interaction: InteractionType) {
@@ -162,31 +181,56 @@ fn spawn_monster(
     grid_x: i32, 
     grid_y: i32, 
     name_key: &str, 
-    _i18n: &I18nResource,
     monster_defs: &MonsterDefinitions,
+    assets: &GameAssets,
 ) {
     // Look up monster definition
     let Some(data) = monster_defs.definitions.get(name_key) else {
-        println!("❌ Failed to spawn monster: {} (Not found in DB)", name_key);
+        println!("❌ Failed to spawn monster: {} (Not found in data module)", name_key);
         return;
     };
-
-    // Create a clone of data to modify instance specific fields if needed
-    // But Monster::new takes &MonsterData and creates an instance.
-    // The MonsterData contains 'name' which is the DB name (e.g. "Slime").
-    // If we want localized name, we might update it here.
-    // But Monster::new copies data.name.
     
     let monster = Monster::new(data, Position::new(grid_x as f64, grid_y as f64));
     let iso_pos = project_iso(grid_x as f32, grid_y as f32);
+    
+    // Get sprite size based on monster level/size
+    let sprite_size = match data.sprite_size {
+        crate::shared::domain::monster::SpriteSize::Small => Vec2::new(32.0, 32.0),
+        crate::shared::domain::monster::SpriteSize::Medium => Vec2::new(48.0, 48.0),
+        crate::shared::domain::monster::SpriteSize::Large => Vec2::new(64.0, 64.0),
+        crate::shared::domain::monster::SpriteSize::Boss => Vec2::new(128.0, 128.0),
+    };
+    
+    // Try to get monster sprite from assets
+    let sprite = if let Some(sprite_handle) = assets.get_monster_sprite(&data.sprite_type) {
+        Sprite {
+            image: sprite_handle,
+            custom_size: Some(sprite_size),
+            ..default()
+        }
+    } else {
+        // Fallback to colored rectangle with monster-type specific colors
+        let color = match data.sprite_type.as_str() {
+            "rat" => Color::srgb(0.5, 0.4, 0.3),      // Brownish
+            "bat" => Color::srgb(0.3, 0.2, 0.4),      // Dark purple
+            "slime" => Color::srgb(0.2, 0.7, 0.3),    // Green slime
+            "wolf" => Color::srgb(0.4, 0.4, 0.45),    // Grey
+            "skeleton" => Color::srgb(0.8, 0.8, 0.75), // Bone white
+            "goblin" => Color::srgb(0.3, 0.5, 0.2),   // Green
+            "ghost" => Color::srgba(0.7, 0.7, 0.9, 0.6), // Translucent blue
+            "dragon" => Color::srgb(0.8, 0.2, 0.1),   // Red
+            _ => MONSTER_COLOR,
+        };
+        Sprite {
+            color,
+            custom_size: Some(sprite_size),
+            ..default()
+        }
+    };
 
     commands.spawn((
-        Sprite {
-            color: MONSTER_COLOR,
-            custom_size: Some(Vec2::new(32.0, 32.0)),
-            ..default()
-        },
-        Transform::from_xyz(iso_pos.x, iso_pos.y, 5.0),
+        sprite,
+        Transform::from_xyz(iso_pos.x, iso_pos.y, 5.0 + iso_pos.y.abs() / 1000.0),
         MonsterComponent,
         monster,
         MonsterAI {
@@ -206,6 +250,8 @@ fn spawn_monster(
         Facing::default(),
         AnimationState::default(),
     ));
+    
+    println!("👾 Spawned {} at ({}, {})", name_key, grid_x, grid_y);
 }
 
 fn spawn_hud(commands: &mut Commands, font: Handle<Font>) {
@@ -520,7 +566,6 @@ pub fn skill_system(
     mut monster_query: Query<(Entity, &GridPosition, &mut Monster), With<MonsterComponent>>,
     mut commands: Commands,
     skill_data: Res<SkillData>,
-    i18n: Res<I18nResource>,
 ) {
     let Ok((player_pos, facing, mut player, mut active_skills)) = player_query.get_single_mut() else { return; };
 
@@ -540,24 +585,24 @@ pub fn skill_system(
     for (i, key) in keys.iter().enumerate() {
         if keyboard_input.just_pressed(*key) {
             if let Some(skill) = available_skills.get(i) {
-                let skill_name = i18n.t(&skill.name);
+                let skill_name = &skill.name;
                 
                 // Check cooldown
                 if let Some(skill_cd) = active_skills.skills.iter().find(|s| s.skill_id == skill.id) {
                     if !skill_cd.timer.finished() {
-                        println!("⏳ {} {}", skill_name, i18n.t("ui.cooldown_msg"));
+                        println!("⏳ {} is on cooldown", skill_name);
                         continue;
                     }
                 }
 
                 // Check MP
                 if player.combat_stats.mp < skill.mp_cost {
-                    println!("❌ {}", i18n.t("ui.not_enough_mp"));
+                    println!("❌ Not enough MP for {}", skill_name);
                     continue;
                 }
 
                 // Execute skill
-                println!("🔥 {} {}", i18n.t("ui.skill_activated"), skill_name);
+                println!("🔥 Skill activated: {}", skill_name);
                 player.combat_stats.mp -= skill.mp_cost;
 
                 // Set cooldown
@@ -588,7 +633,7 @@ pub fn skill_system(
                             if m_pos.x == tx && m_pos.y == ty {
                                 let damage = skill.base_value + (player.combat_stats.attack_max / 2);
                                 monster.take_damage(damage);
-                                println!("💥 {}에게 {} {} 데미지!", monster.name, skill.name, damage);
+                                println!("💥 {} took {} damage from {}!", monster.name, damage, skill_name);
                                 
                                 if monster.is_dead() { 
                                     // Handle Loot and Rewards
@@ -596,8 +641,8 @@ pub fn skill_system(
                                     player.gold += gold_reward as i64;
                                     player.exp += monster.exp_reward as i64;
                                     
-                                    println!("💰 {} {} 획득! (현재: {})", gold_reward, i18n.t("ui.gold"), player.gold);
-                                    println!("📈 {} 경험치 획득! (현재: {})", monster.exp_reward, player.exp);
+                                    println!("💰 +{} Gold! (Total: {})", gold_reward, player.gold);
+                                    println!("📈 +{} EXP! (Total: {})", monster.exp_reward, player.exp);
                                     
                                     // Level Up Check
                                     if player.exp >= player.exp_to_next_level {

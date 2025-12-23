@@ -99,11 +99,11 @@ impl Player {
     pub fn add_stat(&mut self, stat_type: StatType, amount: i32) {
         if self.stat_points >= amount {
             match stat_type {
-                StatType::Str => self.stats.str += amount,
-                StatType::Dex => self.stats.dex += amount,
-                StatType::Int => self.stats.int += amount,
-                StatType::Con => self.stats.con += amount,
-                StatType::Wis => self.stats.wis += amount,
+                StatType::Str => self.stats.str_stat += amount,
+                StatType::Dex => self.stats.dex_stat += amount,
+                StatType::Int => self.stats.int_stat += amount,
+                StatType::Con => self.stats.con_stat += amount,
+                StatType::Wis => self.stats.wis_stat += amount,
             }
             self.stat_points -= amount;
             self.combat_stats = CombatStats::from_stats(&self.stats, self.level);
@@ -167,19 +167,19 @@ impl PlayerClass {
         // Legend of Darkness style roughly
         match self {
             PlayerClass::Warrior => Stats {
-                str: 10, dex: 5, int: 3, con: 10, wis: 3
+                str_stat: 10, dex_stat: 5, int_stat: 3, con_stat: 10, wis_stat: 3
             },
             PlayerClass::Rogue => Stats {
-                str: 7, dex: 10, int: 3, con: 5, wis: 5
+                str_stat: 7, dex_stat: 10, int_stat: 3, con_stat: 5, wis_stat: 5
             },
             PlayerClass::Mage => Stats {
-                str: 3, dex: 4, int: 10, con: 3, wis: 3
+                str_stat: 3, dex_stat: 4, int_stat: 10, con_stat: 3, wis_stat: 3
             },
             PlayerClass::Cleric => Stats {
-                str: 4, dex: 4, int: 7, con: 5, wis: 3 // Wis -> Int/Vit mix
+                str_stat: 4, dex_stat: 4, int_stat: 7, con_stat: 5, wis_stat: 3 // Wis -> Int/Vit mix
             },
             PlayerClass::MartialArtist => Stats {
-                str: 8, dex: 8, int: 3, con: 8, wis: 3
+                str_stat: 8, dex_stat: 8, int_stat: 3, con_stat: 8, wis_stat: 3
             },
         }
     }

@@ -1,7 +1,7 @@
 use axum::{Json, extract::Query};
 use serde::Deserialize;
 use crate::shared::domain::skill::models::Skill;
-use crate::server::db::get_db_pool;
+use crate::shared::data::skills::{ALL_SKILLS, SkillEffectType};
 
 #[derive(Deserialize)]
 pub struct SkillFilter {
@@ -9,45 +9,41 @@ pub struct SkillFilter {
     pub level: Option<i32>,
 }
 
-/// Handler to get all skills or filter by class/level
-pub async fn get_skills(Query(filter): Query<SkillFilter>) -> Json<Vec<Skill>> {
-    let pool = get_db_pool();
-    
-    let result = match (filter.class_id, filter.level) {
-        (Some(cid), Some(lvl)) => {
-            sqlx::query_as::<_, Skill>(
-                "SELECT id, name, class_id, req_level, mp_cost, cooldown_ms, description, effect_type, base_value, icon_path FROM skill_definitions WHERE (class_id = $1 OR class_id IS NULL) AND req_level <= $2"
-            )
-            .bind(cid)
-            .bind(lvl)
-            .fetch_all(pool)
-            .await
-        },
-        (Some(cid), None) => {
-            sqlx::query_as::<_, Skill>(
-                "SELECT id, name, class_id, req_level, mp_cost, cooldown_ms, description, effect_type, base_value, icon_path FROM skill_definitions WHERE class_id = $1 OR class_id IS NULL"
-            )
-            .bind(cid)
-            .fetch_all(pool)
-            .await
-        },
-        (None, Some(lvl)) => {
-            sqlx::query_as::<_, Skill>(
-                "SELECT id, name, class_id, req_level, mp_cost, cooldown_ms, description, effect_type, base_value, icon_path FROM skill_definitions WHERE req_level <= $1"
-            )
-            .bind(lvl)
-            .fetch_all(pool)
-            .await
-        },
-        (None, None) => {
-            sqlx::query_as::<_, Skill>(
-                "SELECT id, name, class_id, req_level, mp_cost, cooldown_ms, description, effect_type, base_value, icon_path FROM skill_definitions"
-            )
-            .fetch_all(pool)
-            .await
-        }
-    };
+/// Convert SkillDef to Skill domain model
+fn skill_def_to_skill(def: &crate::shared::data::skills::SkillDef) -> Skill {
+    Skill {
+        id: def.id,
+        name: def.name.to_string(),
+        class_id: def.class_id,
+        req_level: def.req_level,
+        mp_cost: def.mp_cost,
+        cooldown_ms: def.cooldown_ms,
+        description: Some(def.description_key.to_string()),
+        effect_type: Some(match def.effect_type {
+            SkillEffectType::Damage => "damage",
+            SkillEffectType::Heal => "heal",
+            SkillEffectType::Buff => "buff",
+            SkillEffectType::Debuff => "debuff",
+        }.to_string()),
+        base_value: def.base_value,
+        icon_path: Some(def.icon_path.to_string()),
+    }
+}
 
-    let skills = result.unwrap_or_default();
+/// Handler to get all skills or filter by class/level
+/// Now uses Rust constants for perfect consistency with client.
+pub async fn get_skills(Query(filter): Query<SkillFilter>) -> Json<Vec<Skill>> {
+    let mut skills: Vec<Skill> = ALL_SKILLS.iter()
+        .map(|def| skill_def_to_skill(def))
+        .collect();
+
+    if let Some(cid) = filter.class_id {
+        skills.retain(|s| s.class_id == Some(cid) || s.class_id.is_none());
+    }
+
+    if let Some(lvl) = filter.level {
+        skills.retain(|s| s.req_level <= lvl);
+    }
+
     Json(skills)
 }

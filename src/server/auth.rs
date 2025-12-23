@@ -29,6 +29,7 @@ pub struct RegisterRequest {
     pub username: String,
     pub password: String,
     pub class_idx: i32,
+    pub gender: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -46,6 +47,9 @@ pub async fn login_handler(
 ) -> Json<LoginResponse> {
     use bcrypt::verify;
     use sqlx::Row;
+    use crate::shared::domain::character::models::PlayerClass;
+    use crate::shared::domain::shared::models::{Stats, CombatStats, Position, Direction};
+    use crate::shared::data::characters::get_class_by_id;
     
     // 1. Get User
     let row: Option<(uuid::Uuid, String)> = sqlx::query_as(
@@ -77,11 +81,10 @@ pub async fn login_handler(
     // 3. Get Character
     let char_row = sqlx::query(
         r#"
-        SELECT c.id, c.name, c.gender, c.class_id, c.level, c.exp, c.gold, c.map_id, c.x, c.y,
-               s.str, s.dex, s.con, s.int_stat, s.wis, s.stat_points_available
-        FROM characters c
-        LEFT JOIN character_stats s ON c.id = s.character_id
-        WHERE c.user_id = $1
+        SELECT id, name, gender, class_id, level, exp, gold, current_map, pos_x, pos_y,
+               bonus_str_stat, bonus_dex_stat, bonus_int_stat, bonus_wis_stat, bonus_con_stat, stat_points
+        FROM characters
+        WHERE user_id = $1
         LIMIT 1
         "#
     )
@@ -91,29 +94,30 @@ pub async fn login_handler(
     .unwrap_or(None);
     
     if let Some(c) = char_row {
-        use crate::shared::domain::character::models::PlayerClass;
-        use crate::shared::domain::shared::models::{Stats, CombatStats, Position, Direction};
-        
-        let class_id: Option<i32> = c.get("class_id");
+        let class_id: i32 = c.get("class_id");
         let player_class = match class_id {
-            Some(1) => PlayerClass::Warrior,
-            Some(2) => PlayerClass::Rogue,
-            Some(3) => PlayerClass::Mage,
-            Some(4) => PlayerClass::Cleric,
-            Some(5) => PlayerClass::MartialArtist,
+            1 => PlayerClass::Warrior,
+            2 => PlayerClass::Rogue,
+            3 => PlayerClass::Mage,
+            4 => PlayerClass::Cleric,
+            5 => PlayerClass::MartialArtist,
             _ => PlayerClass::Warrior,
         };
         
-        let stats = Stats {
-            str: c.try_get::<i32, _>("str").unwrap_or(10),
-            dex: c.try_get::<i32, _>("dex").unwrap_or(10),
-            con: c.try_get::<i32, _>("con").unwrap_or(10),
-            int: c.try_get::<i32, _>("int_stat").unwrap_or(10),
-            wis: c.try_get::<i32, _>("wis").unwrap_or(10),
+        let bonus_stats = Stats {
+            str_stat: c.try_get::<i32, _>("bonus_str_stat").unwrap_or(0),
+            dex_stat: c.try_get::<i32, _>("bonus_dex_stat").unwrap_or(0),
+            int_stat: c.try_get::<i32, _>("bonus_int_stat").unwrap_or(0),
+            wis_stat: c.try_get::<i32, _>("bonus_wis_stat").unwrap_or(0),
+            con_stat: c.try_get::<i32, _>("bonus_con_stat").unwrap_or(0),
         };
         
+        // Load base stats from class definition
+        let class_def = get_class_by_id(class_id).expect("Invalid class ID in DB");
+        let final_stats = class_def.base_stats + bonus_stats;
+        
         let level: i32 = c.try_get("level").unwrap_or(1);
-        let combat_stats = CombatStats::from_stats(&stats, level);
+        let combat_stats = CombatStats::from_stats(&final_stats, level);
 
         let char_id: uuid::Uuid = c.get("id");
         let player = Player {
@@ -123,16 +127,16 @@ pub async fn login_handler(
             class: player_class,
             level,
             exp: c.try_get("exp").unwrap_or(0),
-            exp_to_next_level: 100,
-            stats,
-            stat_points: c.try_get("stat_points_available").unwrap_or(0),
+            exp_to_next_level: crate::shared::data::characters::exp_to_next_level(level),
+            stats: final_stats,
+            stat_points: c.try_get("stat_points").unwrap_or(0),
             combat_stats,
             equipment: std::collections::HashMap::new(),
             inventory: vec![None; 24],
-            current_map: c.get("map_id"),
+            current_map: c.get("current_map"),
             position: Position { 
-                x: c.try_get::<i32, _>("x").unwrap_or(400) as f64, 
-                y: c.try_get::<i32, _>("y").unwrap_or(300) as f64 
+                x: c.try_get::<f64, _>("pos_x").unwrap_or(400.0), 
+                y: c.try_get::<f64, _>("pos_y").unwrap_or(300.0) 
             },
             direction: Direction::Down,
             gold: c.try_get("gold").unwrap_or(0),
@@ -190,33 +194,21 @@ pub async fn register_handler(
         });
     }
     
-    // Create Character
+    // Create Character with default starting values
     let char_id = Uuid::new_v4();
     if let Err(e) = sqlx::query(
-        "INSERT INTO characters (id, user_id, name, class_id, gender) VALUES ($1, $2, $3, $4, 'male')"
+        "INSERT INTO characters (id, user_id, name, class_id, gender) VALUES ($1, $2, $3, $4, $5)"
     )
     .bind(char_id)
     .bind(user_id)
     .bind(&req.username)
     .bind(req.class_idx)
+    .bind(&req.gender)
     .execute(&pool)
     .await {
         return Json(RegisterResponse {
             success: false,
             message: format!("Failed to create character: {}", e),
-        });
-    }
-    
-    // Create Stats
-    if let Err(e) = sqlx::query(
-        "INSERT INTO character_stats (character_id, str, dex, con, int_stat, wis) VALUES ($1, 10, 10, 10, 10, 10)"
-    )
-    .bind(char_id)
-    .execute(&pool)
-    .await {
-        return Json(RegisterResponse {
-            success: false,
-            message: format!("Failed to create stats: {}", e),
         });
     }
     

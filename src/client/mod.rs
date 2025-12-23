@@ -8,6 +8,8 @@ mod systems;
 mod states;
 mod components;
 mod resources;
+pub mod animation;
+pub mod inventory;
 
 use bevy::prelude::*;
 use states::GameState;
@@ -26,8 +28,9 @@ impl Plugin for LegendGamePlugin {
             .insert_resource(resources::GameAssets::default())
             .insert_resource(resources::SelectedClass::default())
             .insert_resource(resources::SkillData::default())
-            .insert_resource(resources::I18nResource::default())
+            .insert_resource(resources::TextResource::default())
             .insert_resource(resources::MonsterDefinitions::default())
+            .insert_resource(resources::SpriteAtlases::default())
             
             // Startup systems
             .add_systems(Startup, (
@@ -60,6 +63,7 @@ impl Plugin for LegendGamePlugin {
                 game::monster_ai,
                 game::skill_system,
                 game::interaction_system,
+                animation::update_animations,
                 ui::update_hud,
             ).run_if(in_state(GameState::Playing)))
             .add_systems(OnExit(GameState::Playing), game::cleanup_game_world);
