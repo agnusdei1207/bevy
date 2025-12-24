@@ -10,14 +10,12 @@ use std::collections::HashMap;
 #[derive(Resource)]
 pub struct LoadingState {
     pub start_time: f64,
-    pub checked_font: bool,
 }
 
 impl Default for LoadingState {
     fn default() -> Self {
         Self {
             start_time: 0.0,
-            checked_font: false,
         }
     }
 }
@@ -26,6 +24,7 @@ impl Default for LoadingState {
 pub fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera2d,
+        // Ensure camera is positioned correctly to see Z-ordered sprites
         Transform::from_xyz(0.0, 0.0, 100.0),
     ));
 }
@@ -62,15 +61,15 @@ pub fn load_assets(
     for class_name in classes {
         let mut gender_map = HashMap::new();
         for gender in genders {
-            let path = format!("characters/{}/{}_spritesheet.png", class_name, gender);
+            // Prefer folder structure: characters/warrior/male/spritesheet.png
+            // Fallback to characters/warrior/male_spritesheet.png if needed, but let's try strict first
+             let path = format!("characters/{}/{}/spritesheet.png", class_name, gender);
+            // let path = format!("characters/{}/{}_spritesheet.png", class_name, gender);
             let handle = asset_server.load(&path);
             gender_map.insert(gender.to_string(), handle);
         }
         game_assets.character_sprites.insert(class_name.to_string(), gender_map);
     }
-    
-    // Note: We don't set assets_loaded = true here anymore. 
-    // We will check actual load states in check_assets_loaded.
 }
 
 /// Check if assets are loaded and transition to main menu
@@ -96,24 +95,29 @@ pub fn check_assets_loaded(
     
     // 3. Track progress
     let mut pending_count = 0;
-    let mut failed_count = 0;
+    let mut _failed_count = 0;
+    let mut font_ready = false;
     
     // Check font
     match font_state {
-        Some(LoadState::Loaded) => {},
-        Some(LoadState::Failed(_)) => { failed_count += 1; },
+        Some(LoadState::Loaded) => {
+            font_ready = true;
+        },
+        Some(LoadState::Failed(ref e)) => { // Use ref to avoid move
+            warn!("❌ Font load failed: {:?}", e);
+            _failed_count += 1; 
+        },
         _ => { pending_count += 1; }
     }
 
     // Check optional assets (just for logging, don't block too long)
     if let Some(atlas) = &game_assets.tile_atlas {
         if !matches!(asset_server.get_load_state(atlas), Some(LoadState::Loaded)) {
-            // We differentiate 'NotLoaded' vs 'Loading' vs 'Failed', but for simplicity just count pending
+            // checking...
         }
     }
 
     // 4. Decision logic
-    let font_ready = matches!(font_state, Some(LoadState::Loaded));
     let data_ready = !skill_data.skills.is_empty() && !monster_definitions.definitions.is_empty();
     
     // Proceed if:
@@ -126,7 +130,7 @@ pub fn check_assets_loaded(
         next_state.set(GameState::MainMenu);
     } else if elapsed > 5.0 {
         warn!("⏰ Timeout ({}s). Force starting game even if assets are missing.", elapsed);
-        warn!("   - Font loaded: {}", font_ready);
+        warn!("   - Font loaded: {} (State: {:?})", font_ready, font_state);
         warn!("   - Data ready: {}", data_ready);
         
         game_assets.assets_loaded = true; // Pretend we are loaded

@@ -51,7 +51,10 @@ impl Plugin for LegendGamePlugin {
             
             // Character select state
             .add_systems(OnEnter(GameState::CharacterSelect), ui::spawn_character_select)
-            .add_systems(Update, ui::character_select_interaction.run_if(in_state(GameState::CharacterSelect)))
+            .add_systems(Update, (
+                ui::character_select_interaction,
+                ui::update_character_select_visuals,
+            ).run_if(in_state(GameState::CharacterSelect)))
             .add_systems(OnExit(GameState::CharacterSelect), ui::cleanup_character_select)
             
             // Playing state
