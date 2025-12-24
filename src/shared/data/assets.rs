@@ -66,7 +66,7 @@ pub mod tile_indices {
 }
 
 pub const GROUND_TILESET: TilesetConfig = TilesetConfig {
-    path: "/assets/tiles/ground/tileset.png",
+    path: "/assets/tiles/ground/tileset.webp",
     tile_width: 64,
     tile_height: 32, // Isometric 2:1 ratio
     columns: 8,
@@ -80,7 +80,7 @@ pub struct BuildingConfig {
     pub height: u32,
 }
 
-pub const BUILDINGS_SPRITESHEET: &str = "/assets/tiles/buildings/buildings.png";
+pub const BUILDINGS_SPRITESHEET: &str = "/assets/tiles/buildings/buildings.webp";
 
 pub mod building_indices {
     pub const HOUSE_SMALL: u32 = 0;
@@ -93,13 +93,13 @@ pub mod building_indices {
 
 /// Decoration sprite paths
 pub mod decorations {
-    pub const TORCH: &str = "/assets/tiles/decorations/torch.png";
-    pub const FOUNTAIN: &str = "/assets/tiles/decorations/fountain.png";
-    pub const TREE: &str = "/assets/tiles/decorations/tree.png";
-    pub const BUSH: &str = "/assets/tiles/decorations/bush.png";
-    pub const ROCK: &str = "/assets/tiles/decorations/rock.png";
-    pub const GRAVE: &str = "/assets/tiles/decorations/grave.png";
-    pub const MAGIC_CIRCLE: &str = "/assets/tiles/decorations/magic_circle.png";
+    pub const TORCH: &str = "/assets/tiles/decorations/torch.webp";
+    pub const FOUNTAIN: &str = "/assets/tiles/decorations/fountain.webp";
+    pub const TREE: &str = "/assets/tiles/decorations/tree.webp";
+    pub const BUSH: &str = "/assets/tiles/decorations/bush.webp";
+    pub const ROCK: &str = "/assets/tiles/decorations/rock.webp";
+    pub const GRAVE: &str = "/assets/tiles/decorations/grave.webp";
+    pub const MAGIC_CIRCLE: &str = "/assets/tiles/decorations/magic_circle.webp";
 }
 
 /// Font paths

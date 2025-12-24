@@ -1,0 +1,61 @@
+{
+    "version": "1.0.0",
+    "id": "monster_rat",
+    "name": "Giant Rat",
+    "sprite_type": "monster",
+    "image_path": "/assets/monsters/rat/spritesheet.png",
+    "layout": {
+        "image_width": 128,
+        "image_height": 128,
+        "frame_width": 32,
+        "frame_height": 32,
+        "columns": 4,
+        "rows": 4,
+        "padding": 0,
+        "offset_x": 0,
+        "offset_y": 0
+    },
+    "animations": [
+        {
+            "state": "idle",
+            "start_frame": 0,
+            "frame_count": 4,
+            "fps": 6.0,
+            "looping": true
+        },
+        {
+            "state": "walk",
+            "start_frame": 4,
+            "frame_count": 4,
+            "fps": 8.0,
+            "looping": true
+        },
+        {
+            "state": "attack",
+            "start_frame": 8,
+            "frame_count": 4,
+            "fps": 10.0,
+            "looping": false
+        },
+        {
+            "state": "die",
+            "start_frame": 12,
+            "frame_count": 4,
+            "fps": 6.0,
+            "looping": false
+        }
+    ],
+    "mirror": {
+        "enabled": false,
+        "source_to_target": {}
+    },
+    "anchor": [
+        0.5,
+        0.5
+    ],
+    "metadata": {
+        "level": "1",
+        "size": "small",
+        "description": "A large, aggressive rodent commonly found in dungeons."
+    }
+}

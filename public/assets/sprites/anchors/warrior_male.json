@@ -1,0 +1,717 @@
+{
+    "character_id": "warrior_male",
+    "frame_width": 48.0,
+    "frame_height": 64.0,
+    "animations": {
+        "idle_down": {
+            "state": "idle",
+            "direction": "down",
+            "frames": [
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 36.0,
+                            "y": 38.0
+                        },
+                        "left_hand": {
+                            "x": 12.0,
+                            "y": 38.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": 0.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 9.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 33.0
+                        },
+                        "right_hand": {
+                            "x": 36.0,
+                            "y": 39.0
+                        },
+                        "left_hand": {
+                            "x": 12.0,
+                            "y": 39.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 29.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 63.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 33.0
+                        }
+                    },
+                    "rotation": 0.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 36.0,
+                            "y": 38.0
+                        },
+                        "left_hand": {
+                            "x": 12.0,
+                            "y": 38.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": 0.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 7.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 31.0
+                        },
+                        "right_hand": {
+                            "x": 36.0,
+                            "y": 37.0
+                        },
+                        "left_hand": {
+                            "x": 12.0,
+                            "y": 37.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 27.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 61.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 31.0
+                        }
+                    },
+                    "rotation": 0.0,
+                    "z_offset": 0
+                }
+            ]
+        },
+        "idle_right": {
+            "state": "idle",
+            "direction": "right",
+            "frames": [
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 40.0,
+                            "y": 36.0
+                        },
+                        "left_hand": {
+                            "x": 8.0,
+                            "y": 36.0
+                        },
+                        "back": {
+                            "x": 16.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": -15.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 9.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 33.0
+                        },
+                        "right_hand": {
+                            "x": 40.0,
+                            "y": 37.0
+                        },
+                        "left_hand": {
+                            "x": 8.0,
+                            "y": 37.0
+                        },
+                        "back": {
+                            "x": 16.0,
+                            "y": 29.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 63.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 33.0
+                        }
+                    },
+                    "rotation": -15.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 40.0,
+                            "y": 36.0
+                        },
+                        "left_hand": {
+                            "x": 8.0,
+                            "y": 36.0
+                        },
+                        "back": {
+                            "x": 16.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": -15.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 7.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 31.0
+                        },
+                        "right_hand": {
+                            "x": 40.0,
+                            "y": 35.0
+                        },
+                        "left_hand": {
+                            "x": 8.0,
+                            "y": 35.0
+                        },
+                        "back": {
+                            "x": 16.0,
+                            "y": 27.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 61.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 31.0
+                        }
+                    },
+                    "rotation": -15.0,
+                    "z_offset": 0
+                }
+            ]
+        },
+        "attack_right": {
+            "state": "attack",
+            "direction": "right",
+            "frames": [
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 42.0,
+                            "y": 32.0
+                        },
+                        "left_hand": {
+                            "x": 8.0,
+                            "y": 36.0
+                        },
+                        "back": {
+                            "x": 16.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 40.0,
+                            "y": 28.0
+                        }
+                    },
+                    "rotation": -45.0,
+                    "z_offset": 1
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 26.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 26.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 46.0,
+                            "y": 28.0
+                        },
+                        "left_hand": {
+                            "x": 10.0,
+                            "y": 36.0
+                        },
+                        "back": {
+                            "x": 18.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 26.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 50.0,
+                            "y": 20.0
+                        }
+                    },
+                    "rotation": 0.0,
+                    "z_offset": 1
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 28.0,
+                            "y": 10.0
+                        },
+                        "body": {
+                            "x": 28.0,
+                            "y": 34.0
+                        },
+                        "right_hand": {
+                            "x": 48.0,
+                            "y": 38.0
+                        },
+                        "left_hand": {
+                            "x": 12.0,
+                            "y": 38.0
+                        },
+                        "back": {
+                            "x": 20.0,
+                            "y": 30.0
+                        },
+                        "feet": {
+                            "x": 28.0,
+                            "y": 64.0
+                        },
+                        "effect_center": {
+                            "x": 52.0,
+                            "y": 36.0
+                        }
+                    },
+                    "rotation": 60.0,
+                    "z_offset": 1
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 26.0,
+                            "y": 9.0
+                        },
+                        "body": {
+                            "x": 26.0,
+                            "y": 33.0
+                        },
+                        "right_hand": {
+                            "x": 44.0,
+                            "y": 40.0
+                        },
+                        "left_hand": {
+                            "x": 10.0,
+                            "y": 37.0
+                        },
+                        "back": {
+                            "x": 18.0,
+                            "y": 29.0
+                        },
+                        "feet": {
+                            "x": 26.0,
+                            "y": 63.0
+                        },
+                        "effect_center": {
+                            "x": 44.0,
+                            "y": 38.0
+                        }
+                    },
+                    "rotation": 30.0,
+                    "z_offset": 1
+                }
+            ]
+        },
+        "walk_down": {
+            "state": "walk",
+            "direction": "down",
+            "frames": [
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 34.0,
+                            "y": 40.0
+                        },
+                        "left_hand": {
+                            "x": 14.0,
+                            "y": 36.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": 5.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 7.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 31.0
+                        },
+                        "right_hand": {
+                            "x": 36.0,
+                            "y": 38.0
+                        },
+                        "left_hand": {
+                            "x": 12.0,
+                            "y": 38.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 27.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 61.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 31.0
+                        }
+                    },
+                    "rotation": 0.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 14.0,
+                            "y": 36.0
+                        },
+                        "left_hand": {
+                            "x": 34.0,
+                            "y": 40.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": -5.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 7.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 31.0
+                        },
+                        "right_hand": {
+                            "x": 36.0,
+                            "y": 38.0
+                        },
+                        "left_hand": {
+                            "x": 12.0,
+                            "y": 38.0
+                        },
+                        "back": {
+                            "x": 24.0,
+                            "y": 27.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 61.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 31.0
+                        }
+                    },
+                    "rotation": 0.0,
+                    "z_offset": 0
+                }
+            ]
+        },
+        "walk_right": {
+            "state": "walk",
+            "direction": "right",
+            "frames": [
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 42.0,
+                            "y": 34.0
+                        },
+                        "left_hand": {
+                            "x": 6.0,
+                            "y": 38.0
+                        },
+                        "back": {
+                            "x": 16.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": -20.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 26.0,
+                            "y": 7.0
+                        },
+                        "body": {
+                            "x": 26.0,
+                            "y": 31.0
+                        },
+                        "right_hand": {
+                            "x": 40.0,
+                            "y": 36.0
+                        },
+                        "left_hand": {
+                            "x": 8.0,
+                            "y": 36.0
+                        },
+                        "back": {
+                            "x": 18.0,
+                            "y": 27.0
+                        },
+                        "feet": {
+                            "x": 26.0,
+                            "y": 61.0
+                        },
+                        "effect_center": {
+                            "x": 26.0,
+                            "y": 31.0
+                        }
+                    },
+                    "rotation": -15.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 24.0,
+                            "y": 8.0
+                        },
+                        "body": {
+                            "x": 24.0,
+                            "y": 32.0
+                        },
+                        "right_hand": {
+                            "x": 38.0,
+                            "y": 40.0
+                        },
+                        "left_hand": {
+                            "x": 10.0,
+                            "y": 34.0
+                        },
+                        "back": {
+                            "x": 16.0,
+                            "y": 28.0
+                        },
+                        "feet": {
+                            "x": 24.0,
+                            "y": 62.0
+                        },
+                        "effect_center": {
+                            "x": 24.0,
+                            "y": 32.0
+                        }
+                    },
+                    "rotation": -10.0,
+                    "z_offset": 0
+                },
+                {
+                    "anchors": {
+                        "head": {
+                            "x": 22.0,
+                            "y": 7.0
+                        },
+                        "body": {
+                            "x": 22.0,
+                            "y": 31.0
+                        },
+                        "right_hand": {
+                            "x": 40.0,
+                            "y": 36.0
+                        },
+                        "left_hand": {
+                            "x": 8.0,
+                            "y": 36.0
+                        },
+                        "back": {
+                            "x": 14.0,
+                            "y": 27.0
+                        },
+                        "feet": {
+                            "x": 22.0,
+                            "y": 61.0
+                        },
+                        "effect_center": {
+                            "x": 22.0,
+                            "y": 31.0
+                        }
+                    },
+                    "rotation": -15.0,
+                    "z_offset": 0
+                }
+            ]
+        }
+    }
+}

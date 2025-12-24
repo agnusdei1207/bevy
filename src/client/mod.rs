@@ -10,6 +10,7 @@ mod components;
 mod resources;
 pub mod animation;
 pub mod inventory;
+pub mod equipment;
 
 use bevy::prelude::*;
 use states::GameState;
@@ -22,6 +23,9 @@ impl Plugin for LegendGamePlugin {
         app
             // Game states
             .init_state::<GameState>()
+            
+            // Plugins
+            .add_plugins(equipment::EquipmentRenderingPlugin)
             
             // Resources (Global)
             .insert_resource(resources::GameConfig::default())

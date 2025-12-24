@@ -155,9 +155,7 @@ legend/
 
 | 문서 | 설명 |
 |------|------|
-| [ASSETS.md](./ASSETS.md) | 에셋 폴더 구조 및 스프라이트 규격 |
-| [ASSET_GENERATION.md](./ASSET_GENERATION.md) | 에셋 생성 프롬프트 및 상태 추적 |
-| [DESIGN_GUIDELINES.md](./DESIGN_GUIDELINES.md) | 비주얼 스타일 가이드 |
+| [ASSETS.md](./ASSETS.md) | **에셋 & 스프라이트 시스템 마스터 가이드** (통합본) |
 
 ---
 

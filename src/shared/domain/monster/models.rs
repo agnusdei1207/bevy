@@ -246,7 +246,7 @@ impl MonsterDataDto {
         
         // Sprite path from DB or generate from sprite_type
         let sprite_path = self.sprite_path.unwrap_or_else(|| {
-            format!("/assets/monsters/{}/spritesheet.png", sprite_type)
+            format!("/assets/monsters/{}/spritesheet.webp", sprite_type)
         });
         
         MonsterData {

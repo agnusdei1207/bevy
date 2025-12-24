@@ -32,7 +32,7 @@ pub struct MonsterDef {
 impl MonsterDef {
     /// Get sprite sheet path for this monster
     pub fn sprite_path(&self) -> String {
-        format!("/assets/monsters/{}/spritesheet.png", self.sprite_type)
+        format!("/assets/monsters/{}/spritesheet.webp", self.sprite_type)
     }
 }
 

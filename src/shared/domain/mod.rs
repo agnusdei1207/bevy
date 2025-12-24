@@ -2,6 +2,7 @@
 
 pub mod character;
 pub mod monster;
+pub mod sprite;
 
 pub mod item;
 pub mod skill;
