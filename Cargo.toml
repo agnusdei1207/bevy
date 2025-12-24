@@ -98,7 +98,6 @@ wasm = [
     "client",
     "dep:getrandom",
     "dep:console_error_panic_hook",
-    "bevy/webgpu",
 ]
 
 [profile.dev]
