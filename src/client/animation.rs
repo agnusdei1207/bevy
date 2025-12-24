@@ -113,6 +113,32 @@ impl Default for SpriteAnimator {
     }
 }
 
+impl SpriteAnimator {
+    /// Initialize sprite with the first frame using manifest
+    pub fn initialize_sprite(&self, sprite: &mut Sprite, manifests: &Assets<crate::shared::domain::sprite::SpriteManifest>) {
+        let Some(handle) = &self.manifest else { return; };
+        let Some(manifest) = manifests.get(handle) else { return; };
+        
+        // Get first frame (index 0) of current state and direction
+        let (index, flip) = manifest.get_frame_index(self.state, self.direction, 0);
+        
+        // Set flip
+        sprite.flip_x = flip;
+        
+        // Calculate and set rect
+        let (rect_x, rect_y, w, h) = manifest.layout.get_frame_rect(index);
+        sprite.rect = Some(Rect::new(
+            rect_x as f32,
+            rect_y as f32,
+            (rect_x + w) as f32,
+            (rect_y + h) as f32,
+        ));
+        
+        // Set custom size to match frame size
+        sprite.custom_size = Some(Vec2::new(w as f32, h as f32));
+    }
+}
+
 /// System to update animations using SpriteManifest
 pub fn update_animations(
     time: Res<Time>,
@@ -164,6 +190,18 @@ pub fn update_animations(
         sprite.custom_size = Some(Vec2::new(w as f32, h as f32));
     }
 }
+
+/// System to initialize newly spawned sprites (runs once on spawn)
+/// This prevents the "flashing all frames" issue by setting initial rect
+pub fn initialize_new_sprites(
+    manifests: Res<Assets<crate::shared::domain::sprite::SpriteManifest>>,
+    mut query: Query<(&SpriteAnimator, &mut Sprite), Added<SpriteAnimator>>,
+) {
+    for (animator, mut sprite) in &mut query {
+        animator.initialize_sprite(&mut sprite, &manifests);
+    }
+}
+
 
 /// Texture atlas cache resource
 #[derive(Resource, Default)]

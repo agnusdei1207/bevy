@@ -407,10 +407,10 @@ impl SpriteManifest {
             sprite_type: SpriteType::Character,
             image_path: image_path.to_string(),
             layout: SpriteLayout {
-                image_width: 192,
-                image_height: 256,
-                frame_width: 48,
-                frame_height: 64,
+                image_width: 1024,
+                image_height: 1024,
+                frame_width: 256,
+                frame_height: 256,
                 columns: 4,
                 rows: 4,
                 ..Default::default()
@@ -422,13 +422,9 @@ impl SpriteManifest {
     }
 
     /// 몬스터용 기본 매니페스트 생성
-    pub fn new_monster(id: &str, name: &str, image_path: &str, size: MonsterSpriteSize) -> Self {
-        let (frame_size, image_size) = match size {
-            MonsterSpriteSize::Small => (32, 128),
-            MonsterSpriteSize::Medium => (48, 192),
-            MonsterSpriteSize::Large => (64, 256),
-            MonsterSpriteSize::Boss => (128, 512),
-        };
+    pub fn new_monster(id: &str, name: &str, image_path: &str, _size: MonsterSpriteSize) -> Self {
+        // All sprites are 1024x1024 with 4x4 grid = 256x256 per frame
+        let (frame_size, image_size) = (256, 1024);
 
         let animations = vec![
             AnimationSequence {

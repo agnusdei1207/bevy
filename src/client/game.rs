@@ -6,16 +6,15 @@ use crate::shared::domain::character::models::Player;
 use crate::shared::domain::monster::Monster;
 use crate::shared::domain::skill::models::Skill;
 use crate::shared::domain::shared::models::Position;
+use crate::shared::constants::*;
 
-const ISO_CHART_WIDTH: f32 = 64.0;
-const ISO_CHART_HEIGHT: f32 = 32.0;
 
 /// Projects logical grid coordinates (x, y) to screen isometric coordinates (x, y)
 /// Darkages/Legend of Darkness style 2:1 ratio.
 fn project_iso(grid_x: f32, grid_y: f32) -> Vec2 {
-    let x = (grid_x - grid_y) * (ISO_CHART_WIDTH / 2.0);
-    let y = (grid_x + grid_y) * -(ISO_CHART_HEIGHT / 2.0);
-    Vec2::new(x, y)
+    let iso_x = (grid_x - grid_y) * (TILE_WIDTH / 2.0);
+    let iso_y = (grid_x + grid_y) * (TILE_HEIGHT / 2.0);
+    Vec2::new(iso_x, -iso_y)
 }
 
 // ============ Color Constants ============
@@ -72,13 +71,13 @@ pub fn spawn_game_world(
                 // TODO: Use texture atlas with proper UV coordinates when atlas layout is defined
                 Sprite {
                     color,
-                    custom_size: Some(Vec2::new(ISO_CHART_WIDTH, ISO_CHART_HEIGHT)),
+                    custom_size: Some(Vec2::new(TILE_WIDTH, TILE_HEIGHT)),
                     ..default()
                 }
             } else {
                 Sprite {
                     color,
-                    custom_size: Some(Vec2::new(ISO_CHART_WIDTH, ISO_CHART_HEIGHT)),
+                    custom_size: Some(Vec2::new(TILE_WIDTH, TILE_HEIGHT)),
                     ..default()
                 }
             };
@@ -110,7 +109,7 @@ pub fn spawn_game_world(
     } else {
         Sprite {
             color: PLAYER_COLOR,
-            custom_size: Some(Vec2::new(32.0, 48.0)),
+            custom_size: Some(Vec2::new(CHARACTER_RENDER_WIDTH, CHARACTER_RENDER_HEIGHT)),
             ..default()
         }
     };
@@ -169,10 +168,10 @@ fn spawn_npc(commands: &mut Commands, x: i32, y: i32, name: &str, interaction: I
     commands.spawn((
         Sprite {
             color: Color::srgb(0.7, 0.7, 0.2), // Yellowish for NPCs
-            custom_size: Some(Vec2::new(32.0, 48.0)),
+            custom_size: Some(Vec2::new(CHARACTER_RENDER_WIDTH, CHARACTER_RENDER_HEIGHT)),
             ..default()
         },
-        Transform::from_xyz(iso_pos.x, iso_pos.y, 5.0),
+        Transform::from_xyz(iso_pos.x, iso_pos.y, Z_LAYER_ENTITY_BASE),
         GridPosition { x, y },
         TargetGridPosition { x, y },
         Interactable {
@@ -202,10 +201,10 @@ fn spawn_monster(
     
     // Get sprite size based on monster level/size
     let sprite_size = match data.sprite_size {
-        crate::shared::domain::monster::SpriteSize::Small => Vec2::new(32.0, 32.0),
-        crate::shared::domain::monster::SpriteSize::Medium => Vec2::new(48.0, 48.0),
-        crate::shared::domain::monster::SpriteSize::Large => Vec2::new(64.0, 64.0),
-        crate::shared::domain::monster::SpriteSize::Boss => Vec2::new(128.0, 128.0),
+        crate::shared::domain::monster::SpriteSize::Small => Vec2::new(MONSTER_SPRITE_SMALL * MONSTER_RENDER_SCALE, MONSTER_SPRITE_SMALL * MONSTER_RENDER_SCALE),
+        crate::shared::domain::monster::SpriteSize::Medium => Vec2::new(MONSTER_SPRITE_MEDIUM * MONSTER_RENDER_SCALE, MONSTER_SPRITE_MEDIUM * MONSTER_RENDER_SCALE),
+        crate::shared::domain::monster::SpriteSize::Large => Vec2::new(MONSTER_SPRITE_LARGE * MONSTER_RENDER_SCALE, MONSTER_SPRITE_LARGE * MONSTER_RENDER_SCALE),
+        crate::shared::domain::monster::SpriteSize::Boss => Vec2::new(MONSTER_SPRITE_BOSS * MONSTER_RENDER_SCALE, MONSTER_SPRITE_BOSS * MONSTER_RENDER_SCALE),
     };
     
     // Try to get monster sprite from assets
@@ -236,7 +235,7 @@ fn spawn_monster(
 
     commands.spawn((
         sprite,
-        Transform::from_xyz(iso_pos.x, iso_pos.y, 5.0 + iso_pos.y.abs() / 1000.0),
+        Transform::from_xyz(iso_pos.x, iso_pos.y, Z_LAYER_ENTITY_BASE + iso_pos.y.abs() / 1000.0),
         MonsterComponent,
         monster,
         MonsterAI {
@@ -493,7 +492,7 @@ pub fn monster_ai(
             let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
             
             // Convert pixel-based range to grid-based range (rough estimation)
-            let detection_grid_range = ai.detection_range as f64 / ISO_CHART_WIDTH as f64;
+            let detection_grid_range = ai.detection_range as f64 / GRID_UNIT as f64;
             let attack_grid_range = 1.1; // Close range
             
             match ai.ai_type {

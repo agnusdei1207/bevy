@@ -65,6 +65,7 @@ impl Plugin for LegendGamePlugin {
             // Playing state
             .add_systems(OnEnter(GameState::Playing), game::spawn_game_world)
             .add_systems(Update, (
+                animation::initialize_new_sprites,  // Must run first to set initial frame
                 game::player_movement,
                 game::character_grid_movement,
                 game::sync_character_animation,
