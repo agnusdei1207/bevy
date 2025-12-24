@@ -29,7 +29,7 @@ pub struct GameAssets {
     pub ui_font: Handle<Font>,
     pub assets_loaded: bool,
     
-    // Sprite textures (WebP)
+    // Sprite textures (Supports PNG/WebP)
     pub tile_atlas: Option<Handle<Image>>,
     pub buildings_atlas: Option<Handle<Image>>,
     
@@ -38,16 +38,12 @@ pub struct GameAssets {
     
     // Monster sprites (sprite_type -> handle)
     pub monster_sprites: HashMap<String, Handle<Image>>,
+
+    // Manifests (id -> handle)
+    pub manifests: HashMap<String, Handle<crate::shared::domain::sprite::SpriteManifest>>,
     
     // Decoration sprites
     pub torch_sprite: Option<Handle<Image>>,
-}
-
-/// Global cache for loaded sprite manifests
-#[derive(Resource, Default)]
-pub struct SpriteLibrary {
-    pub manifests: HashMap<String, crate::shared::domain::sprite::SpriteManifest>,
-    pub ready: bool,
 }
 
 impl GameAssets {

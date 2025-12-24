@@ -81,12 +81,15 @@ impl Default for EquipmentRenderingSystem {
 /// 장비 위치 업데이트 시스템
 pub fn update_equipment_positions(
     equipment_system: Res<EquipmentRenderingSystem>,
+    manifests: Res<Assets<crate::shared::domain::sprite::SpriteManifest>>,
     character_query: Query<(Entity, &Transform, &crate::client::animation::SpriteAnimator, &EquippedItems)>,
     mut equipment_query: Query<(&EquipmentSprite, &mut Transform, &mut Sprite), Without<crate::client::animation::SpriteAnimator>>,
 ) {
     for (char_entity, char_transform, anim_state, _equipped) in character_query.iter() {
-        // manifest_id가 없으면 장착 위치를 계산할 수 없음
-        let Some(manifest_id) = &anim_state.manifest_id else { continue; };
+        // manifest가 없으면 장착 위치를 계산할 수 없음
+        let Some(handle) = &anim_state.manifest else { continue; };
+        let Some(manifest) = manifests.get(handle) else { continue; };
+        let manifest_id = &manifest.id;
 
         // 이 캐릭터에 연결된 장비 스프라이트들 업데이트
         for (equip_sprite, mut equip_transform, mut sprite) in equipment_query.iter_mut() {

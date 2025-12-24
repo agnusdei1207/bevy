@@ -249,8 +249,7 @@ impl MirrorConfig {
 
 /// 스프라이트 매니페스트 - 하나의 스프라이트시트에 대한 완전한 메타데이터
 /// 스프라이트 매니페스트 (스프라이트시트 메타데이터)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "client", derive(Asset, TypePath))]
+#[derive(Debug, Clone, Serialize, Deserialize, Asset, TypePath)]
 pub struct SpriteManifest {
     /// 매니페스트 버전
     #[serde(default = "default_version")]

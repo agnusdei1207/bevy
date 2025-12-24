@@ -87,6 +87,7 @@ impl MonsterAnimations {
     }
 }
 
+/// Animator component for entities with sprite animations
 #[derive(Debug, Clone, Component)]
 pub struct SpriteAnimator {
     pub state: crate::shared::domain::sprite::AnimationState,
@@ -95,7 +96,7 @@ pub struct SpriteAnimator {
     pub timer: Timer,
     pub playing: bool,
     pub looping: bool,
-    pub manifest_id: Option<String>,
+    pub manifest: Option<Handle<crate::shared::domain::sprite::SpriteManifest>>,
 }
 
 impl Default for SpriteAnimator {
@@ -107,7 +108,7 @@ impl Default for SpriteAnimator {
             timer: Timer::from_seconds(0.15, TimerMode::Repeating),
             playing: true,
             looping: true,
-            manifest_id: None,
+            manifest: None,
         }
     }
 }
@@ -115,7 +116,7 @@ impl Default for SpriteAnimator {
 /// System to update animations using SpriteManifest
 pub fn update_animations(
     time: Res<Time>,
-    sprite_library: Res<super::resources::SpriteLibrary>,
+    manifests: Res<Assets<crate::shared::domain::sprite::SpriteManifest>>,
     mut query: Query<(&mut SpriteAnimator, &mut Sprite)>,
 ) {
     for (mut anim, mut sprite) in &mut query {
@@ -125,8 +126,8 @@ pub fn update_animations(
 
         anim.timer.tick(time.delta());
         
-        let Some(manifest_id) = &anim.manifest_id else { continue; };
-        let Some(manifest) = sprite_library.manifests.get(manifest_id) else { continue; };
+        let Some(handle) = &anim.manifest else { continue; };
+        let Some(manifest) = manifests.get(handle) else { continue; };
         
         // Get animation sequence
         let Some(seq) = manifest.get_animation(anim.state) else { continue; };

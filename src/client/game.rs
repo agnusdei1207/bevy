@@ -128,7 +128,7 @@ pub fn spawn_game_world(
             start_pos: Vec2::new(8.0, 8.0),
         },
         super::animation::SpriteAnimator {
-            manifest_id: Some(manifest_id.to_string()),
+            manifest: assets.manifests.get(manifest_id).cloned(),
             ..default()
         },
         CombatState::default(),
@@ -255,7 +255,7 @@ fn spawn_monster(
         },
         Facing::default(),
         super::animation::SpriteAnimator {
-            manifest_id: Some(data.sprite_type.clone()),
+            manifest: assets.manifests.get(&data.sprite_type).cloned(),
             ..default()
         },
     ));

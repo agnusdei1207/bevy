@@ -28,9 +28,9 @@ impl Plugin for LegendGamePlugin {
             .add_plugins(equipment::EquipmentRenderingPlugin)
             
             // Resources (Global)
+            .init_asset::<crate::shared::domain::sprite::SpriteManifest>()
             .insert_resource(resources::GameConfig::default())
             .insert_resource(resources::GameAssets::default())
-            .insert_resource(resources::SpriteLibrary::default())
             .insert_resource(resources::SelectedClass::default())
             .insert_resource(resources::SkillData::default())
             .insert_resource(resources::TextResource::default())
