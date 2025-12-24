@@ -31,6 +31,7 @@ impl Plugin for LegendGamePlugin {
             .insert_resource(resources::TextResource::default())
             .insert_resource(resources::MonsterDefinitions::default())
             .insert_resource(resources::SpriteAtlases::default())
+            .insert_resource(systems::LoadingState::default())
             
             // Startup systems
             .add_systems(Startup, (

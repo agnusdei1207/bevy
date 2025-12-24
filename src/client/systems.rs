@@ -1,9 +1,26 @@
 //! Core Game Systems
 
 use bevy::prelude::*;
+use bevy::asset::LoadState;
 use super::resources::*;
 use super::states::GameState;
 use std::collections::HashMap;
+
+/// Loading state tracker
+#[derive(Resource)]
+pub struct LoadingState {
+    pub start_time: f64,
+    pub checked_font: bool,
+}
+
+impl Default for LoadingState {
+    fn default() -> Self {
+        Self {
+            start_time: 0.0,
+            checked_font: false,
+        }
+    }
+}
 
 /// Setup 2D camera
 pub fn setup_camera(mut commands: Commands) {
@@ -18,6 +35,8 @@ pub fn load_assets(
     mut game_assets: ResMut<GameAssets>,
     asset_server: Res<AssetServer>,
 ) {
+    info!("📦 Starting asset loading...");
+
     // Load default font
     game_assets.ui_font = asset_server.load("fonts/NanumGothic.ttf");
     
@@ -50,31 +69,74 @@ pub fn load_assets(
         game_assets.character_sprites.insert(class_name.to_string(), gender_map);
     }
     
-    println!("📦 Loading assets...");
-    println!("  - {} monster sprites", game_assets.monster_sprites.len());
-    println!("  - {} character classes", game_assets.character_sprites.len());
-    
-    game_assets.assets_loaded = true;
+    // Note: We don't set assets_loaded = true here anymore. 
+    // We will check actual load states in check_assets_loaded.
 }
 
 /// Check if assets are loaded and transition to main menu
 pub fn check_assets_loaded(
-    game_assets: Res<GameAssets>,
+    mut game_assets: ResMut<GameAssets>,
     skill_data: Res<SkillData>,
     monster_definitions: Res<MonsterDefinitions>,
+    asset_server: Res<AssetServer>,
+    time: Res<Time>,
+    mut loading_state: ResMut<LoadingState>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    // Log once
-    static LOGGED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-    if !LOGGED.load(std::sync::atomic::Ordering::Relaxed) {
-        println!("✅ Skills loaded: {}", skill_data.skills.len());
-        println!("✅ Monsters loaded: {}", monster_definitions.definitions.len());
-        LOGGED.store(true, std::sync::atomic::Ordering::Relaxed);
+    // 1. Initialize start time
+    if loading_state.start_time == 0.0 {
+        loading_state.start_time = time.elapsed_secs_f64();
+        info!("⏳ Waiting for assets to load...");
     }
 
-    // Check if ready
-    if game_assets.assets_loaded && !skill_data.skills.is_empty() && !monster_definitions.definitions.is_empty() {
-        println!("🎮 All assets loaded! Starting game...");
+    let elapsed = time.elapsed_secs_f64() - loading_state.start_time;
+
+    // 2. Check essential assets (Font)
+    let font_state = asset_server.get_load_state(&game_assets.ui_font);
+    
+    // 3. Track progress
+    let mut pending_count = 0;
+    let mut failed_count = 0;
+    
+    // Check font
+    match font_state {
+        Some(LoadState::Loaded) => {},
+        Some(LoadState::Failed(_)) => { failed_count += 1; },
+        _ => { pending_count += 1; }
+    }
+
+    // Check optional assets (just for logging, don't block too long)
+    if let Some(atlas) = &game_assets.tile_atlas {
+        if !matches!(asset_server.get_load_state(atlas), Some(LoadState::Loaded)) {
+            // We differentiate 'NotLoaded' vs 'Loading' vs 'Failed', but for simplicity just count pending
+        }
+    }
+
+    // 4. Decision logic
+    let font_ready = matches!(font_state, Some(LoadState::Loaded));
+    let data_ready = !skill_data.skills.is_empty() && !monster_definitions.definitions.is_empty();
+    
+    // Proceed if:
+    // A) Everything is ready
+    // B) Timeout passed (5 seconds) -> Force start
+    
+    if font_ready && data_ready && pending_count == 0 {
+        info!("✅ All assets loaded successfully! ({}s)", elapsed);
+        game_assets.assets_loaded = true;
         next_state.set(GameState::MainMenu);
+    } else if elapsed > 5.0 {
+        warn!("⏰ Timeout ({}s). Force starting game even if assets are missing.", elapsed);
+        warn!("   - Font loaded: {}", font_ready);
+        warn!("   - Data ready: {}", data_ready);
+        
+        game_assets.assets_loaded = true; // Pretend we are loaded
+        next_state.set(GameState::MainMenu);
+    } else {
+        // Still loading... show progress every second
+        let secs = elapsed as u64;
+        if elapsed - (secs as f64) < 0.05 && secs > 0 {
+           debug!("... loading ({}s elapsed)", secs);
+        }
     }
 }
+
