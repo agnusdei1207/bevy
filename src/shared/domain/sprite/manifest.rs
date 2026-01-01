@@ -11,6 +11,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::shared::constants::*;
 
 #[cfg(feature = "client")]
 use bevy::{asset::Asset, reflect::TypePath};
@@ -186,13 +187,30 @@ impl SpriteLayout {
         direction: SpriteDirection,
         frame: usize,
     ) -> usize {
-        // 기본 레이아웃: 행 = 상태, 열 내 그룹 = 방향, 각 그룹 내 = 프레임
-        // 예: Row 0: [Down F0-F3, Left F0-F3, Right F0-F3, Up F0-F3]
-        let row = state.row_index();
-        let direction_offset = direction.column_index() * 4; // 방향당 4프레임 가정
-        let frame_in_group = frame % 4;
+        // 어둠의전설 스타일 8x8 시트 규격 (정사각형 이미지 최적화)
+        // 각 상태(Idle, Walk, Attack, Die)는 2개 행을 차지함.
+        // 한 행(8열)은 2개 방향(각 4프레임)을 포함함.
         
-        row * self.columns + direction_offset + frame_in_group
+        let dir_idx = match direction {
+            SpriteDirection::Down => 0,
+            SpriteDirection::Left => 1,
+            SpriteDirection::Right => 2,
+            SpriteDirection::Up => 3,
+        };
+
+        let state_row_start = match state {
+            AnimationState::Idle => 0,
+            AnimationState::Walk => 2,
+            AnimationState::Attack => 4,
+            AnimationState::Die => 6,
+            _ => 0, // 기본값 또는 에러 처리
+        };
+
+        // 8x8 (SPRITESHEET_COLUMNS = 8) 기준 계산
+        let final_row = state_row_start + (dir_idx / 2);
+        let final_col = (dir_idx % 2) * 4 + (frame % 4);
+        
+        final_row * 8 + final_col
     }
 }
 
@@ -237,12 +255,30 @@ pub struct MirrorConfig {
 impl MirrorConfig {
     /// 기본 좌우 미러링 설정 생성
     pub fn default_horizontal() -> Self {
-        let mut source_to_target = HashMap::new();
-        source_to_target.insert(SpriteDirection::Right, SpriteDirection::Left);
+        let source_to_target = HashMap::new();
+        // source_to_target.insert(SpriteDirection::Right, SpriteDirection::Left);
         
         Self {
-            enabled: true,
+            enabled: false, // 4방향 시트를 직접 사용하므로 미러링 비활성화
             source_to_target,
+        }
+    }
+
+    /// 주어진 방향에 대해 실제 스프라이트 시트에서 참조해야 할 방향과 미러링 여부를 반환
+    pub fn get_actual_direction(&self, direction: SpriteDirection) -> (SpriteDirection, bool) {
+        if self.enabled {
+            // target -> source 매핑을 찾아야 함
+            // 즉, Left 방향을 요청했는데 Right를 미러링해서 사용한다면 (Right -> Left)
+            // 실제 방향은 Right가 되고, 미러링 플래그는 true가 된다.
+            if let Some((source_dir, _)) = self.source_to_target.iter()
+                .find(|(_, target_dir)| **target_dir == direction)
+            {
+                (*source_dir, true)
+            } else {
+                (direction, false)
+            }
+        } else {
+            (direction, false)
         }
     }
 }
@@ -329,26 +365,15 @@ impl SpriteManifest {
         self.animations.iter().find(|a| a.state == state)
     }
 
-    /// 특정 상태/방향/프레임에 대한 스프라이트 인덱스 계산
+    /// 상태, 방향, 현재 프레임 번호를 기반으로 실제 프레임 인덱스와 반전 여부 반환
     pub fn get_frame_index(
         &self,
         state: AnimationState,
         direction: SpriteDirection,
         frame: usize,
     ) -> (usize, bool) {
-        // 미러링 필요 여부 확인
-        let (actual_direction, needs_flip) = if self.mirror.enabled {
-            if let Some(source) = self.mirror.source_to_target.iter()
-                .find(|(_, target)| **target == direction)
-                .map(|(source, _)| *source)
-            {
-                (source, true)
-            } else {
-                (direction, false)
-            }
-        } else {
-            (direction, false)
-        };
+        // 미러링 설정 확인
+        let (actual_direction, needs_flip) = self.mirror.get_actual_direction(direction);
 
         let index = self.layout.get_sprite_index(state, actual_direction, frame);
         (index, needs_flip)
@@ -371,32 +396,32 @@ impl SpriteManifest {
             AnimationSequence {
                 state: AnimationState::Idle,
                 start_frame: 0,
-                frame_count: 4,
-                fps: 4.0,
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: true,
                 direction_offsets: None,
             },
             AnimationSequence {
                 state: AnimationState::Walk,
-                start_frame: 4,
-                frame_count: 4,
-                fps: 8.0,
+                start_frame: 0, // get_sprite_index handles the row offset
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: true,
                 direction_offsets: None,
             },
             AnimationSequence {
                 state: AnimationState::Attack,
-                start_frame: 8,
-                frame_count: 4,
-                fps: 10.0,
+                start_frame: 0,
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: false,
                 direction_offsets: None,
             },
             AnimationSequence {
                 state: AnimationState::Die,
-                start_frame: 12,
-                frame_count: 4,
-                fps: 6.0,
+                start_frame: 0,
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: false,
                 direction_offsets: None,
             },
@@ -408,12 +433,12 @@ impl SpriteManifest {
             sprite_type: SpriteType::Character,
             image_path: image_path.to_string(),
             layout: SpriteLayout {
-                image_width: 256,
-                image_height: 256,
-                frame_width: 64,
-                frame_height: 64,
-                columns: 4,
-                rows: 4,
+                image_width: CHARACTER_SPRITESHEET_SIZE,
+                image_height: CHARACTER_SPRITESHEET_SIZE,
+                frame_width: CHARACTER_FRAME_SIZE,
+                frame_height: CHARACTER_FRAME_SIZE,
+                columns: SPRITESHEET_COLUMNS,
+                rows: SPRITESHEET_ROWS,
                 ..Default::default()
             },
             animations,
@@ -426,43 +451,44 @@ impl SpriteManifest {
     /// Standard sizes: Small(32/128), Medium(48/192), Large(64/256), Boss(128/512)
     pub fn new_monster(id: &str, name: &str, image_path: &str, size: MonsterSpriteSize) -> Self {
         // Calculate frame and sheet size based on monster size tier
-        let (frame_size, image_size) = match size {
-            MonsterSpriteSize::Small => (32, 128),   // 32x32 frame, 128x128 sheet
-            MonsterSpriteSize::Medium => (48, 192),  // 48x48 frame, 192x192 sheet
-            MonsterSpriteSize::Large => (64, 256),   // 64x64 frame, 256x256 sheet
-            MonsterSpriteSize::Boss => (128, 512),   // 128x128 frame, 512x512 sheet
+        let frame_size = match size {
+            MonsterSpriteSize::Small => 32,
+            MonsterSpriteSize::Medium => 48,
+            MonsterSpriteSize::Large => 64,
+            MonsterSpriteSize::Boss => 128,
         };
+        let image_size = frame_size * 8; // 8x8 grid
 
         let animations = vec![
             AnimationSequence {
                 state: AnimationState::Idle,
                 start_frame: 0,
-                frame_count: 4,
-                fps: 6.0,
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: true,
                 direction_offsets: None,
             },
             AnimationSequence {
                 state: AnimationState::Walk,
-                start_frame: 4,
-                frame_count: 4,
-                fps: 8.0,
+                start_frame: 0,
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: true,
                 direction_offsets: None,
             },
             AnimationSequence {
                 state: AnimationState::Attack,
-                start_frame: 8,
-                frame_count: 4,
-                fps: 10.0,
+                start_frame: 0,
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: false,
                 direction_offsets: None,
             },
             AnimationSequence {
                 state: AnimationState::Die,
-                start_frame: 12,
-                frame_count: 4,
-                fps: 6.0,
+                start_frame: 0,
+                frame_count: ANIMATION_FRAMES_DEFAULT,
+                fps: ANIMATION_FPS_DEFAULT,
                 looping: false,
                 direction_offsets: None,
             },
@@ -478,8 +504,8 @@ impl SpriteManifest {
                 image_height: image_size,
                 frame_width: frame_size,
                 frame_height: frame_size,
-                columns: 4,
-                rows: 4,
+                columns: SPRITESHEET_COLUMNS,
+                rows: SPRITESHEET_ROWS,
                 ..Default::default()
             },
             animations,

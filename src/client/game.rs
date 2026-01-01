@@ -34,6 +34,7 @@ pub fn spawn_game_world(
     _asset_server: Res<AssetServer>,
     assets: Res<GameAssets>,
     monster_defs: Res<MonsterDefinitions>,
+    manifests: Res<Assets<crate::shared::domain::sprite::SpriteManifest>>,
 ) {
     // =============================================
     // Spawn Tiles using tile atlas or fallback colors
@@ -85,10 +86,21 @@ pub fn spawn_game_world(
             let iso_pos = project_iso(x as f32, y as f32);
             
             // Try to use tile texture, fallback to colored sprite
-            let sprite = if let Some(ref _tile_atlas) = assets.tile_atlas {
-                // TODO: Use texture atlas with proper UV coordinates when atlas layout is defined
+            let sprite = if let (Some(image), Some(layout)) = (assets.tile_atlas.clone(), assets.tile_atlas_layout.clone()) {
+                let index = match tile_type {
+                    RenderTileType::Grass => 0,
+                    RenderTileType::Stone => 4,
+                    RenderTileType::Fountain => 1,
+                    RenderTileType::Wall => 5,
+                    RenderTileType::Door => 2,
+                };
+                
                 Sprite {
-                    color,
+                    image,
+                    texture_atlas: Some(TextureAtlas {
+                        layout,
+                        index,
+                    }),
                     custom_size: Some(Vec2::new(TILE_WIDTH, TILE_HEIGHT)),
                     ..default()
                 }
@@ -119,11 +131,23 @@ pub fn spawn_game_world(
     // =============================================
     let manifest_id = "warrior_male";
     let player_sprite = if let Some(sprite_handle) = assets.get_character_sprite("warrior", "male") {
-        Sprite {
+        let mut s = Sprite {
             image: sprite_handle,
-            // custom_size will be set by animation system
             ..default()
+        };
+        
+        // Pre-set initial rect if manifest is available to avoid "box flashing"
+        if let Some(manifest_handle) = assets.manifests.get(manifest_id) {
+            if let Some(manifest) = manifests.get(manifest_handle) {
+                let (index, flip) = manifest.get_frame_index(crate::shared::domain::sprite::AnimationState::Idle, crate::shared::domain::sprite::SpriteDirection::Down, 0);
+                let (rx, ry, rw, rh) = manifest.layout.get_frame_rect(index);
+                s.rect = Some(Rect::new(rx as f32, ry as f32, (rx + rw) as f32, (ry + rh) as f32));
+                s.custom_size = Some(Vec2::new(rw as f32, rh as f32));
+                s.flip_x = flip;
+                s.anchor = bevy::sprite::Anchor::BottomCenter;
+            }
         }
+        s
     } else {
         Sprite {
             color: PLAYER_COLOR,
@@ -164,7 +188,7 @@ pub fn spawn_game_world(
     ];
     
     for (x, y, name) in monster_positions {
-        spawn_monster(&mut commands, x, y, name, &monster_defs, &assets);
+        spawn_monster(&mut commands, x, y, name, &monster_defs, &assets, &manifests);
     }
     
     // =============================================
@@ -207,6 +231,7 @@ fn spawn_monster(
     name_key: &str, 
     monster_defs: &MonsterDefinitions,
     assets: &GameAssets,
+    manifests: &Assets<crate::shared::domain::sprite::SpriteManifest>,
 ) {
     // Look up monster definition
     let Some(data) = monster_defs.definitions.get(name_key) else {
@@ -227,12 +252,25 @@ fn spawn_monster(
     
     // Try to get monster sprite from assets
     let sprite = if let Some(sprite_handle) = assets.get_monster_sprite(&data.sprite_type) {
-        Sprite {
+        let mut s = Sprite {
             image: sprite_handle,
             ..default()
+        };
+        
+        // Pre-set initial rect if manifest is available
+        if let Some(manifest_handle) = assets.manifests.get(&data.sprite_type) {
+            if let Some(manifest) = manifests.get(manifest_handle) {
+                let (index, flip) = manifest.get_frame_index(crate::shared::domain::sprite::AnimationState::Idle, crate::shared::domain::sprite::SpriteDirection::Down, 0);
+                let (rx, ry, rw, rh) = manifest.layout.get_frame_rect(index);
+                s.rect = Some(Rect::new(rx as f32, ry as f32, (rx + rw) as f32, (ry + rh) as f32));
+                s.custom_size = Some(Vec2::new(rw as f32, rh as f32));
+                s.flip_x = flip;
+                s.anchor = bevy::sprite::Anchor::BottomCenter;
+            }
         }
+        s
     } else {
-        // Fallback to colored rectangle with monster-type specific colors
+        // Fallback to colored rectangle...
         let color = match data.sprite_type.as_str() {
             "rat" => Color::srgb(0.5, 0.4, 0.3),      // Brownish
             "bat" => Color::srgb(0.3, 0.2, 0.4),      // Dark purple

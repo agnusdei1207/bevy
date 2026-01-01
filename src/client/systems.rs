@@ -33,6 +33,7 @@ pub fn setup_camera(mut commands: Commands) {
 pub fn load_assets(
     mut game_assets: ResMut<GameAssets>,
     mut manifests: ResMut<Assets<crate::shared::domain::sprite::SpriteManifest>>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     asset_server: Res<AssetServer>,
 ) {
     info!("📦 Starting asset loading (Defaults: PNG, supports WebP)...");
@@ -42,6 +43,16 @@ pub fn load_assets(
     
     // Load tile atlas
     game_assets.tile_atlas = Some(asset_server.load("tiles/ground/tileset.png"));
+    
+    // Create tile atlas layout (4 columns, 4 rows for a 256x256 image with 64x64 tiles)
+    let layout = TextureAtlasLayout::from_grid(
+        UVec2::new(64, 64),
+        4, 
+        4,
+        None,
+        None,
+    );
+    game_assets.tile_atlas_layout = Some(texture_atlas_layouts.add(layout));
     game_assets.buildings_atlas = Some(asset_server.load("tiles/buildings/buildings.png"));
     
     // Load decoration sprites

@@ -42,6 +42,9 @@ pub struct GameAssets {
     // Manifests (id -> handle)
     pub manifests: HashMap<String, Handle<crate::shared::domain::sprite::SpriteManifest>>,
     
+    // Atlas layouts
+    pub tile_atlas_layout: Option<Handle<TextureAtlasLayout>>,
+    
     // Decoration sprites
     pub torch_sprite: Option<Handle<Image>>,
 }

@@ -62,33 +62,27 @@ pub const MONSTER_RENDER_SCALE: f32 = 1.0;
 // 🖼️ 4. 스프라이트시트 규격 (Sprite Sheet Layout)
 // ============================================================
 
-/// 캐릭터 스프라이트시트 이미지 크기 (정사각형)
-/// Standard: 256x256 (64x64 프레임 * 4x4 그리드)
-pub const CHARACTER_SPRITESHEET_SIZE: u32 = 256;
+/// 캐릭터 스프라이트시트 이미지 크기 (8x8 그리드 기준, 정사각형)
+/// 64 픽셀 * 8 열 = 512 픽셀
+pub const CHARACTER_SPRITESHEET_SIZE: u32 = 512;
 
-/// 스프라이트시트 열 수 (4방향: Down, Left, Right, Up)
-pub const SPRITESHEET_COLUMNS: usize = 4;
+/// 스프라이트시트 열 수 (8열)
+pub const SPRITESHEET_COLUMNS: usize = 8;
 
-/// 스프라이트시트 행 수 (4동작: Idle, Walk, Attack, Die)
-pub const SPRITESHEET_ROWS: usize = 4;
+/// 스프라이트시트 행 수 (8행)
+pub const SPRITESHEET_ROWS: usize = 8;
 
-/// 캐릭터 프레임 크기 (256 / 4 = 64)
-pub const CHARACTER_FRAME_SIZE: u32 = CHARACTER_SPRITESHEET_SIZE / SPRITESHEET_COLUMNS as u32;
+/// 캐릭터 프레임 크기 (64x64)
+pub const CHARACTER_FRAME_SIZE: u32 = 64;
 
 // ============================================================
 // 🎬 5. 애니메이션 규격 (Animation Specifications)
 // ============================================================
 
-/// 기본 애니메이션 FPS
-pub const ANIMATION_FPS_DEFAULT: f32 = 8.0;
+/// 일관성 있는 애니메이션 FPS (모든 동작 공통)
+pub const ANIMATION_FPS_DEFAULT: f32 = 10.0;
 
-/// 공격 애니메이션 FPS (빠르게)
-pub const ANIMATION_FPS_ATTACK: f32 = 12.0;
-
-/// 죽음 애니메이션 FPS (느리게)
-pub const ANIMATION_FPS_DEATH: f32 = 6.0;
-
-/// 기본 프레임 수 (각 상태별)
+/// 일관성 있는 프레임 수 (각 방향/상태별)
 pub const ANIMATION_FRAMES_DEFAULT: usize = 4;
 
 // ============================================================

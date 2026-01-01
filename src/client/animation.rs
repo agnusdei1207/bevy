@@ -4,6 +4,7 @@
 
 use bevy::prelude::*;
 use std::collections::HashMap;
+use crate::shared::constants::*;
 
 /// Animation configuration for sprite sheets
 #[derive(Debug, Clone)]
@@ -23,11 +24,11 @@ pub struct AnimationConfig {
 impl Default for AnimationConfig {
     fn default() -> Self {
         Self {
-            columns: 4,
-            rows: 4,
-            frame_width: 64,
-            frame_height: 64,
-            fps: 8.0,
+            columns: SPRITESHEET_COLUMNS,
+            rows: SPRITESHEET_ROWS,
+            frame_width: CHARACTER_FRAME_SIZE,
+            frame_height: CHARACTER_FRAME_SIZE,
+            fps: ANIMATION_FPS_DEFAULT,
         }
     }
 }
@@ -38,14 +39,12 @@ pub struct CharacterAnimations;
 
 impl CharacterAnimations {
     pub fn get_config(_class: &str) -> AnimationConfig {
-        // All character classes use same layout for consistency
-        // Standard: 256x256 sheet, 64x64 frames
         AnimationConfig {
-            columns: 4,
-            rows: 4,
-            frame_width: 64,
-            frame_height: 64,
-            fps: 8.0,
+            columns: SPRITESHEET_COLUMNS,
+            rows: SPRITESHEET_ROWS,
+            frame_width: CHARACTER_FRAME_SIZE,
+            frame_height: CHARACTER_FRAME_SIZE,
+            fps: ANIMATION_FPS_DEFAULT,
         }
     }
 }
@@ -56,35 +55,19 @@ pub struct MonsterAnimations;
 impl MonsterAnimations {
     pub fn get_config(sprite_size: &crate::shared::domain::monster::SpriteSize) -> AnimationConfig {
         use crate::shared::domain::monster::SpriteSize;
-        match sprite_size {
-            SpriteSize::Small => AnimationConfig {
-                columns: 4,
-                rows: 4,
-                frame_width: 32,
-                frame_height: 32,
-                fps: 8.0,
-            },
-            SpriteSize::Medium => AnimationConfig {
-                columns: 4,
-                rows: 4,
-                frame_width: 48,
-                frame_height: 48,
-                fps: 8.0,
-            },
-            SpriteSize::Large => AnimationConfig {
-                columns: 4,
-                rows: 4,
-                frame_width: 64,
-                frame_height: 64,
-                fps: 6.0,
-            },
-            SpriteSize::Boss => AnimationConfig {
-                columns: 4,
-                rows: 4,
-                frame_width: 128,
-                frame_height: 128,
-                fps: 6.0,
-            },
+        let frame_size = match sprite_size {
+            SpriteSize::Small => 32,
+            SpriteSize::Medium => 48,
+            SpriteSize::Large => 64,
+            SpriteSize::Boss => 128,
+        };
+        
+        AnimationConfig {
+            columns: SPRITESHEET_COLUMNS,
+            rows: SPRITESHEET_ROWS,
+            frame_width: frame_size,
+            frame_height: frame_size,
+            fps: ANIMATION_FPS_DEFAULT,
         }
     }
 }
@@ -160,6 +143,12 @@ pub fn update_animations(
         // Get animation sequence
         let Some(seq) = manifest.get_animation(anim.state) else { continue; };
         
+        // Sync timer duration if it doesn't match the manifest FPS
+        let target_duration = 1.0 / seq.fps;
+        if (anim.timer.duration().as_secs_f32() - target_duration).abs() > 0.001 {
+            anim.timer.set_duration(std::time::Duration::from_secs_f32(target_duration));
+        }
+
         if anim.timer.just_finished() {
             anim.current_frame += 1;
             
