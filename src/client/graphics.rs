@@ -49,9 +49,11 @@ pub fn create_sprite_material(
     materials.add(StandardMaterial {
         base_color_texture: Some(texture),
         alpha_mode,
-        unlit: true, // Sprite style usually doesn't react to lighting heavily
+        unlit: false, // React to lighting for 3D feel
         double_sided: true,
         cull_mode: None,
+        perceptual_roughness: 0.8,
+        reflectance: 0.2,
         ..default()
     })
 }

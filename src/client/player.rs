@@ -63,14 +63,7 @@ fn spawn_player(
             Mesh3d(mesh_handle),
             MeshMaterial3d(material_handle),
             Transform::from_xyz(0.0, 1.0, 0.0) // Lift up so feet are at (0,0,0) parent
-                .with_rotation(Quat::from_rotation_x(-45.0f32.to_radians())), // Tilt back to face camera (approx)
-                // Note: If using Billboard behavior, we'd use LookAt, but for fixed Iso, a fixed tilt is often used.
-                // Or we can rotate the camera, and keep sprite vertical (billboard Y).
-                // Let's try fixed vertical billboard first (always facing camera direction projected on ground).
-                // Actually, for Diablo style, sprites are usually pre-rendered at 45 deg.
-                // If we put them on a vertical quad, and camera is at 45 deg, it looks foreshortened.
-                // To counteract foreshortening, we can tilt the quad back 45 degrees so it's perpendicular to camera.
-                // Let's try 45 deg tilt.
+                .with_rotation(Quat::from_rotation_x(-30.0f32.to_radians())), // Tilt back to face high camera (approx 60 deg pitch -> 30 deg tilt)
             Animation::new(4, 4, 8.0), // 4 rows, 4 cols, 8 FPS
         ));
     });
