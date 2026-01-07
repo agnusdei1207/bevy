@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::client::game::GameResources;
 use crate::client::map::{ResourceNode, ResourceType};
+use crate::client::graphics::{Animation, create_sprite_material, create_sprite_mesh};
 
 pub struct PlayerPlugin;
 
@@ -34,17 +35,45 @@ fn spawn_player(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
-    // Player Capsule
+    // Load Player Sprite
+    // Path based on ASSETS.md and file check
+    let texture_handle = asset_server.load("characters/warrior/male/spritesheet.png");
+
+    // Create Sprite Mesh (Billboard)
+    // Size: 256x256 texture, 4x4 grid -> 64x64 frame.
+    // In world units, let's say 1 unit = 1 meter. 64px could be 2.0 units height?
+    // Let's approximate. Standard character height ~1.8m.
+    let mesh_handle = create_sprite_mesh(&mut meshes, Vec2::new(2.0, 2.0));
+    let material_handle = create_sprite_material(&mut materials, texture_handle, AlphaMode::Blend);
+
+    // Player Entity (Container)
     commands.spawn((
-        Mesh3d(meshes.add(Capsule3d::new(0.4, 1.0))),
-        MeshMaterial3d(materials.add(Color::srgb(0.2, 0.4, 0.8))),
-        Transform::from_xyz(0.0, 1.0, 0.0),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        Visibility::default(),
         Player,
         PlayerState::Idle,
         Speed(6.0),
         GatherTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
-    ));
+    ))
+    .with_children(|parent| {
+        // Sprite Entity
+        parent.spawn((
+            Mesh3d(mesh_handle),
+            MeshMaterial3d(material_handle),
+            Transform::from_xyz(0.0, 1.0, 0.0) // Lift up so feet are at (0,0,0) parent
+                .with_rotation(Quat::from_rotation_x(-45.0f32.to_radians())), // Tilt back to face camera (approx)
+                // Note: If using Billboard behavior, we'd use LookAt, but for fixed Iso, a fixed tilt is often used.
+                // Or we can rotate the camera, and keep sprite vertical (billboard Y).
+                // Let's try fixed vertical billboard first (always facing camera direction projected on ground).
+                // Actually, for Diablo style, sprites are usually pre-rendered at 45 deg.
+                // If we put them on a vertical quad, and camera is at 45 deg, it looks foreshortened.
+                // To counteract foreshortening, we can tilt the quad back 45 degrees so it's perpendicular to camera.
+                // Let's try 45 deg tilt.
+            Animation::new(4, 4, 8.0), // 4 rows, 4 cols, 8 FPS
+        ));
+    });
 }
 
 fn player_input(
@@ -102,14 +131,31 @@ fn player_input(
 
 fn move_player(
     mut commands: Commands,
-    mut player_q: Query<(Entity, &mut Transform, &Speed, &MovementTarget, &mut PlayerState), With<Player>>,
+    mut player_q: Query<(Entity, &mut Transform, &Speed, &MovementTarget, &mut PlayerState, &Children), With<Player>>,
+    mut animation_q: Query<&mut Animation>,
     time: Res<Time>,
 ) {
-    if let Ok((entity, mut transform, speed, target, mut state)) = player_q.get_single_mut() {
+    if let Ok((entity, mut transform, speed, target, mut state, children)) = player_q.get_single_mut() {
         let direction = target.0 - transform.translation;
         // Ignore Y for movement distance
         let flat_direction = Vec3::new(direction.x, 0.0, direction.z);
         let distance = flat_direction.length();
+
+        let mut current_direction_idx = 0; // Down
+        // Calculate direction index for spritesheet
+        // Grid: Col 0 (Down), Col 1 (Left), Col 2 (Right), Col 3 (Up)
+        if distance > 0.1 {
+             let normalized = flat_direction.normalize();
+             if normalized.z.abs() > normalized.x.abs() {
+                 if normalized.z > 0.0 { current_direction_idx = 0; } // Down (+Z)
+                 else { current_direction_idx = 3; } // Up (-Z)
+             } else {
+                 if normalized.x < 0.0 { current_direction_idx = 1; } // Left (-X)
+                 else { current_direction_idx = 2; } // Right (+X)
+             }
+        }
+
+        let mut is_moving = false;
 
         if distance < 0.1 {
             // Arrived
@@ -120,6 +166,7 @@ fn move_player(
                 *state = PlayerState::Idle;
             }
         } else {
+            is_moving = true;
             let move_dist = speed.0 * time.delta_secs();
             if move_dist >= distance {
                 transform.translation = target.0;
@@ -129,9 +176,55 @@ fn move_player(
                 }
             } else {
                 transform.translation += flat_direction.normalize() * move_dist;
-                // Rotate to face movement direction
-                let look_target = Vec3::new(target.0.x, transform.translation.y, target.0.z);
-                transform.look_at(look_target, Vec3::Y);
+                // Don't rotate the container transform with LookAt, because that spins the billboard too.
+                // We keep the container rotation fixed (or Identity) and just change the sprite frame.
+                // transform.look_at(look_target, Vec3::Y); <--- REMOVED
+            }
+        }
+
+        // Update Animation
+        for child in children.iter() {
+            if let Ok(mut animation) = animation_q.get_mut(*child) {
+                 // Update Row (State)
+                 // Grid: Row 0 (Idle), Row 1 (Walk), Row 2 (Attack), Row 3 (Die)
+                 if is_moving {
+                     animation.current_row = 1; // Walk
+                 } else {
+                     // Check if gathering (Attack animation?)
+                     match *state {
+                         PlayerState::Gathering(_) => animation.current_row = 2, // Attack/Gather
+                         _ => animation.current_row = 0, // Idle
+                     }
+                 }
+
+                 // Update Col (Direction) - BUT wait, the grid is Col=Direction?
+                 // ASSETS.md: "Col 0 (Down) Col 1 (Left) Col 2 (Right) Col 3 (Up)"
+                 // AND "Row 0 (Idle) Row 1 (Walk)..."
+                 // This implies that for a given State (Row), there are 4 Direction frames (Cols).
+                 // Wait, usually it's "Row per Direction" or "Row per Animation".
+                 // If Row 0 is ALL Idle frames, then Col must represent Direction?
+                 // If so, there is NO animation frames (movement of legs) within a direction?
+                 // THAT IS WEIRD for a "spritesheet". Usually a spritesheet has multiple frames for walking.
+                 //
+                 // Let's re-read ASSETS.md carefully:
+                 // "그리드: 4열 × 4행 = 16 프레임"
+                 // "Col 0 (Down) Col 1 (Left) Col 2 (Right) Col 3 (Up)"
+                 // "Row 0 (Idle) Row 1 (Walk) Row 2 (Attack) Row 3 (Die)"
+                 //
+                 // Interpretation A: It's a static image per direction/state. No walking animation cycle?
+                 // Interpretation B: The documentation is simplifying. Maybe it's "Row = Direction", "Col = Frame"?
+                 //
+                 // Let's assume Interpretation A for now (Static sprite per state/dir) because 4x4 is very small.
+                 // If it were animated, it would need more columns (e.g., 4 columns for Down-Walk).
+                 // IF Interpretation A is true, then `current_col` should be `current_direction_idx`.
+                 // And we should NOT auto-increment `current_col` in `graphics.rs`.
+
+                 animation.current_col = current_direction_idx;
+
+                 // Disable auto-play in graphics.rs or handle it here?
+                 // The `animate_sprites` system in graphics.rs increments col.
+                 // I should set `is_playing = false` so it doesn't loop through directions as if they were frames.
+                 animation.is_playing = false;
             }
         }
     }

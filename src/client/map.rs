@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
+use crate::client::graphics::{create_sprite_mesh, create_sprite_material};
 
 pub struct MapPlugin;
 
@@ -25,6 +26,7 @@ fn spawn_map(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     // Ground Plane
     commands.spawn((
@@ -49,8 +51,12 @@ fn spawn_map(
     });
 
     // Trees
-    let tree_mesh = meshes.add(Cylinder::new(0.5, 2.0));
-    let tree_mat = materials.add(Color::srgb(0.1, 0.4, 0.1));
+    let tree_texture = asset_server.load("decorations/tree.png"); // Verified path
+    // Assuming tree sprite is roughly 2x3 meters or similar?
+    // Just usage a reasonable size. If the png is square, 2x2. If tall, maybe 2x3.
+    // Let's assume square or auto-fit. Let's use 3.0x3.0 for now.
+    let tree_mesh = create_sprite_mesh(&mut meshes, Vec2::new(3.0, 3.0));
+    let tree_mat = create_sprite_material(&mut materials, tree_texture, AlphaMode::Blend);
 
     let mut rng = rand::thread_rng();
     for _ in 0..20 {
@@ -65,7 +71,8 @@ fn spawn_map(
         commands.spawn((
             Mesh3d(tree_mesh.clone()),
             MeshMaterial3d(tree_mat.clone()),
-            Transform::from_xyz(x, 1.0, z),
+            Transform::from_xyz(x, 1.5, z) // Center is at 1.5Y if height is 3.0
+                .with_rotation(Quat::from_rotation_x(-45.0f32.to_radians())), // Tilt back
             ResourceNode {
                 resource_type: ResourceType::Wood,
                 amount: 100,

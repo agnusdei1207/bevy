@@ -2,6 +2,7 @@ pub mod building;
 pub mod camera;
 pub mod enemy;
 pub mod game;
+pub mod graphics;
 pub mod map;
 pub mod player;
 
@@ -15,6 +16,7 @@ impl Plugin for ClientPlugin {
         app.add_plugins((
             game::GamePlugin,
             camera::CameraPlugin,
+            graphics::GraphicsPlugin,
             map::MapPlugin,
             player::PlayerPlugin,
             enemy::EnemyPlugin,
