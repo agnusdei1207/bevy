@@ -5,7 +5,7 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameResources::default());
-        app.add_systems(Startup, setup_ui);
+        app.add_systems(Startup, (setup_ui, setup_lighting));
         app.add_systems(Update, update_ui);
     }
 }
@@ -18,6 +18,24 @@ pub struct GameResources {
 
 #[derive(Component)]
 struct ResourceText;
+
+fn setup_lighting(mut commands: Commands) {
+    // Ambient Light
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 500.0,
+    });
+
+    // Directional Light (Sun)
+    commands.spawn((
+        DirectionalLight {
+            shadows_enabled: true,
+            illuminance: 10_000.0,
+            ..default()
+        },
+        Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -45.0_f32.to_radians(), 45.0_f32.to_radians(), 0.0)),
+    ));
+}
 
 fn setup_ui(mut commands: Commands) {
     commands

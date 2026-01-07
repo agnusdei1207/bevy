@@ -1,6 +1,4 @@
 use bevy::prelude::*;
-use bevy::render::camera::ScalingMode;
-
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
@@ -14,17 +12,17 @@ impl Plugin for CameraPlugin {
 pub struct MainCamera;
 
 fn spawn_camera(mut commands: Commands) {
-    // Isometric view: 45 degrees pitch, 45 degrees yaw (diagonal look)
-    // Positioned high up
-    let camera_transform = Transform::from_xyz(10.0, 10.0, 10.0)
+    // Diablo-style Top-down 3D View
+    // Steep angle (60 degrees) for better visibility of the battlefield
+    let translation = Vec3::new(0.0, 15.0, 10.0);
+    let camera_transform = Transform::from_translation(translation)
         .looking_at(Vec3::ZERO, Vec3::Y);
 
     commands.spawn((
         Camera3d::default(),
-        Projection::Orthographic(OrthographicProjection {
-            scale: 6.0,
-            scaling_mode: ScalingMode::FixedVertical { viewport_height: 10.0 },
-            ..OrthographicProjection::default_3d()
+        Projection::Perspective(PerspectiveProjection {
+            fov: 45.0_f32.to_radians(), // Narrower FOV for less distortion
+            ..default()
         }),
         camera_transform,
         MainCamera,
@@ -37,9 +35,13 @@ fn camera_follow_player(
 ) {
     if let Ok(player_transform) = player_query.get_single() {
         if let Ok(mut camera_transform) = camera_query.get_single_mut() {
-            let offset = Vec3::new(10.0, 10.0, 10.0);
-            camera_transform.translation = player_transform.translation + offset;
-            camera_transform.look_at(player_transform.translation, Vec3::Y);
+            // Fixed offset for Diablo-like static angle
+            let offset = Vec3::new(0.0, 15.0, 10.0);
+            let target_position = player_transform.translation;
+
+            // Smooth follow could be added here, but direct assignment is snappy
+            camera_transform.translation = target_position + offset;
+            camera_transform.look_at(target_position, Vec3::Y);
         }
     }
 }
